@@ -95,15 +95,25 @@
 <p>Since this blog is about machine learning and mostly deep learning, the primary application of interest to the reader will most likely be the implementation of <a href="https://towardsdatascience.com/under-the-hood-of-neural-networks-part-1-fully-connected-5223b7f78528">fully-connected layers</a> in neural networks. At its core, the fully-connected is based on matrix multiplication.</p>
 <p>Convolutions can also be cast as matrix multiplications. For example, a classic approach for this is to preprocess the input using <a href="https://www.mathworks.com/help/images/ref/im2col.html">im2col</a>, do a matrix multiplication, and then apply <a href="https://www.mathworks.com/help/images/ref/col2im.html">col2im</a>. This is very inefficient, because the im2col matrix needs to be generated, and takes up a lot of extra memory. However, this approach can be made efficient using implicit im2col, resulting in an implicit GEMM convolution, which is implemented via some of the cuDNN algorithms. Also, a <span class="math">\(1x1\)</span> convolution <a href="https://datascience.stackexchange.com/questions/12830/how-are-1x1-convolutions-the-same-as-a-fully-connected-layer">can be cast</a> as a matrix multiplication even without im2col.</p>
 <h3>Review of the mathematical operation</h3>
+<<<<<<< HEAD
 <p>Before we focus on the code, let's review the basics. If we take a matrix <span class="math">\(A_{MxK}\)</span> with <span class="math">\(M\)</span> rows and <span class="math">\(K\)</span> columns, we can multiply it by matrix <span class="math">\(B_{KxN} with $K\)</span> rows and <span class="math">\(N\)</span> columns, obtaining matrix <span class="math">\(C_{MxN}\)</span> with <span class="math">\(M\)</span> rows and <span class="math">\(N\)</span> columns. To obtain each value <span class="math">\(C_{ij}\)</span>, we calculate a dot product between the <span class="math">\(i\)</span>th row of <span class="math">\(A\)</span> and the <span class="math">\(j\)</span>th column of <span class="math">\(B\)</span>.</p>
 <div class="math">$$
 A = \begin{bmatrix}
     a_{11} &amp; a_{12} &amp; a_{13} \\
     a_{21} &amp; a_{22} &amp; a_{23}
+=======
+<p>Here, we'll talk about a</p>
+<p>If we take a matrix <span class="math">\(A_{MxK}\)</span> with data samples in <span class="math">\(M\)</span> rows and feature values in <span class="math">\(K\)</span> columns, and we wish to pass these inputs through a linear layer with <span class="math">\(N\)</span> hidden nodes, we'll need to multiply <span class="math">\(A\)</span> by matrix <span class="math">\(B_{KxN}\)</span> containing the weights of the layer. The result of this multiplication will be the matrix <span class="math">\(C_{MxN}\)</span>.</p>
+<div class="math">$$
+A = \begin{bmatrix}
+    a &amp; b &amp; c \\
+    d &amp; e &amp; f
+>>>>>>> d0dc59b7b94806f88d7a8f7aaa718778a9903752
   \end{bmatrix}
 $$</div>
 <div class="math">$$
 B = \begin{bmatrix}
+<<<<<<< HEAD
 b_{11} &amp; b_{12} \\
 b_{21} &amp; b_{22} \\
 b_{31} &amp; b_{32}
@@ -115,13 +125,30 @@ a_{21}*b_{11} + a_{22}*b_{21} + a_{23}*b_{31} &amp; a_{21}*b_{12} + a_{22}*b_{22
 \end{bmatrix}$$</div>
 <h3>Naive Iterative Algorithm</h3>
 <h3>Caching issues with the naive iterative algorithm</h3>
+=======
+g &amp; h \\
+i &amp; j \\
+k &amp; l
+\end{bmatrix}
+$$</div>
+<div class="math">$$C = AB = \begin{bmatrix}
+a*g + b*i + c*k &amp; a*h+b*j+c*l \\
+d*g+e*i+f*k &amp; d*h + e*j+f*l
+\end{bmatrix}$$</div>
+<h3>What we will not cover</h3>
+<p>There exist algorithms that do less work than <span class="math">\(\Theta(M*N*K)\)</span>, such as <a href="https://en.wikipedia.org/wiki/Strassen_algorithm">Strassen's algorithm</a>, but it deserves its own blog post, so I won't cover it now. Also, Strassen's algorithm can have worse numerical accuracy, so that's another reason to give it the detailed treatment that it deserves in a separate post. There are also other algorithms which has even better complexity than Strassen's algorithm, such as <a href="https://en.wikipedia.org/wiki/Coppersmith%E2%80%93Winograd_algorithm">Coppersmith-Winograd</a>, however these algorithms have gigantic constant factors, that are big enough that the better big-O performance only pays off for big enough problems that they don't fit on modern computers (that is, they are <a href="https://en.wikipedia.org/wiki/Galactic_algorithm">galactic algorithms</a>).</p>
+<h3>Naive Iterative Algorithm</h3>
+>>>>>>> d0dc59b7b94806f88d7a8f7aaa718778a9903752
 <h3>Iterative Algorithm with tiling</h3>
 <h3>Problems with Iterative algorithm on the CPU</h3>
 <p>Tiling is not cache-agnostic.
 Cache can be occupied by other items in a multi-process setting.</p>
 <h3>Divide-and-conquer algorithm</h3>
+<<<<<<< HEAD
 <h3>What we will not cover</h3>
 <p>There exist algorithms that do less work than <span class="math">\(\Theta(M*N*K)\)</span>, such as <a href="https://en.wikipedia.org/wiki/Strassen_algorithm">Strassen's algorithm</a>, but it deserves its own blog post, so I won't cover it now. Also, Strassen's algorithm can have worse numerical accuracy, so that's another reason to give it the detailed treatment that it deserves in a separate post. There are also other algorithms which has even better complexity than Strassen's algorithm, such as <a href="https://en.wikipedia.org/wiki/Coppersmith%E2%80%93Winograd_algorithm">Coppersmith-Winograd</a>, however these algorithms have gigantic constant factors, that are big enough that the better big-O performance only pays off for big enough problems that they don't fit on modern computers (that is, they are <a href="https://en.wikipedia.org/wiki/Galactic_algorithm">galactic algorithms</a>).</p>
+=======
+>>>>>>> d0dc59b7b94806f88d7a8f7aaa718778a9903752
 <script type="text/javascript">if (!document.getElementById('mathjaxscript_pelican_#%@#$@#')) {
     var align = "center",
         indent = "0em",
