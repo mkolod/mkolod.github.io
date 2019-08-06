@@ -121,7 +121,7 @@ a_{21}*b_{11} + a_{22}*b_{21} + a_{23}*b_{31} &amp; a_{21}*b_{12} + a_{22}*b_{22
 <li>Motherboard: ASUS PRIME X299-A motherboard</li>
 <li>OS: Ubuntu 16.04.6 LTS (Xenial Xerus)</li>
 <li>Compiler: GCC 5.4.0</li>
-<li>Compiler flags: "-O3 -march=native"</li>
+<li>Compiler flags: <code>-O3 -march=native</code> (unless specified otherwise)</li>
 </ul>
 <h3>Naive Iterative Algorithm</h3>
 <p>Let's assume that M = N = K = 1024 for simplicity.</p>
@@ -145,12 +145,14 @@ a_{21}*b_{11} + a_{22}*b_{21} + a_{23}*b_{31} &amp; a_{21}*b_{12} + a_{22}*b_{22
 </pre></div>
 
 
-<p>Can we see any problems with the code above? There are plenty. For one, this may be incorrect unless we ensured to <code>memset</code> matrix C to zero. Even assuming that we did so, this code runs extremely slowly. </p>
+<p>Can we see any problems with the code above? There are plenty. For one, this may be incorrect unless we ensured to <code>memset</code> matrix C to zero. Even assuming that we did so, this code runs extremely slowly. With the good compiler flags (<code>-O2 -march=native</code>, see next section), this implementation took 1,600 ms. With lower optimization levels, performance was even worse. For example, just using <code>-O2</code> without <code>-march=native</code>, I got 1,750 ms; <code>-O1</code> was 2,438 ms; and no flags took 4,501 ms.  </p>
 <h3>The importance of good compiler flags</h3>
-<p>Note that the compiler flags used here are the maximum optimization level (O3) and <code>--march=native</code>, which makes the code specific to a given architecture (e.g. using the full Skylake instruction set when setting that flag on the Core&trade; i7-7800X. Actually, since it's GCC 5.4.0, the latest instruction set would be for Broadwell, but the compiler would check the cache sizes before compiling for a particular chip. In practice, compiling for a target machine isn't a bad assumption, since one can ship multiple binaries for different architecture, and then load the binary for the CPU found at runtime. This is also a reasonable assumption when just-in-time compiling (<a href="https://en.wikipedia.org/wiki/Just-in-time_compilation">JIT</a>), which is the preferred approach for optimizing code since there are added benefits that can be exploited when JITting, such as known dimensions which can be provided to the compiler as literals, rather than runtime values.</p>
+<p>As you saw above, high optimization levels result in a very significant performance improvement. Surely we wouldn't want to compare algorithms if there were plenty of scope for the compiler to further optimize code. On the other hand, <code>-march=native</code> is a bit risky.</p>
+<p>Compiling for a given machine may be a bad assumption - after all, we wish the code to be reasonably portable (e.g. for code to work on both Skylake and Haswell chips). In practice, it's not as bad. For instance, we can build libraries with implementations for different architectures, and load the library compiled for the closest architecture once we know which CPU is used at runtime, e.g. via the use of <a href="https://en.wikipedia.org/wiki/CPUID">CPUID</a> style instructions. This can be done is we generate several shared libraries, for example, and then <code>dlopen</code> the one that matches. For repetitive, long-running code, another option is to just-in-time compile (<a href="https://en.wikipedia.org/wiki/Just-in-time_compilation">JIT</a>) such code, which is the preferred approach for optimizing code since there are added benefits that can be exploited when JITting, such as known dimensions which can be provided to the compiler as literals, rather than runtime values.</p>
+<p>For now, unless stated otherwise, let's assume that we're using <code>-O3 -march=native</code> to have the compiler optimize as much as possible, so we can focus on algorithmic differences.</p>
 <h3>Optimizing the naive iterative algorithm</h3>
 <p>Let's try to improve performance with one line of code, while also addressing the issue of not having <code>memset</code> matrix C. Note that the <code>+=</code> is a problem - we read from RAM and then update. If a matrix is big enough, we'll surely incur some cache misses. Since we only need to update one float at a time, we could instead create a single float, which the compiler would likely put in a register, and update that register instead. This way we should go from 3 reads (A, B and C) and 1 write (C) from RAM to 2 reads and 1 write. Since the register access time is insignificant compared to RAM, we'd expect about 25% of the execution time to go away.</p>
-<div class="highlight"><pre><span></span><span class="kt">void</span> <span class="nf">naiveIterativeMatmul</span><span class="p">(</span>
+<div class="highlight"><pre><span></span><span class="kt">void</span> <span class="nf">iterativeMatmulRegisterSum</span><span class="p">(</span>
         <span class="kt">float</span><span class="o">*</span> <span class="k">const</span> <span class="n">A</span><span class="p">,</span>
         <span class="kt">float</span><span class="o">*</span> <span class="k">const</span> <span class="n">B</span><span class="p">,</span>
         <span class="kt">float</span><span class="o">*</span> <span class="k">const</span> <span class="n">C</span><span class="p">,</span>
@@ -171,9 +173,9 @@ a_{21}*b_{11} + a_{22}*b_{21} + a_{23}*b_{31} &amp; a_{21}*b_{12} + a_{22}*b_{22
 </pre></div>
 
 
-<p>This implementation took 6,316 ms to execute, which was 77% of the time it took to execute the original - close enough to the expected 75%. Our intuition was correct!</p>
+<p>This implementation took 1,055 ms to execute, which was 65% of the time it took to execute the original. We actually gained more time than we expected! This could be for many reasons, including not polluting the cache with C matrix intermediates, not having to deal with read-write sequencing of RAM (rather than just reading), etc.</p>
 <p>Note though that in a row-major programming language like C/C++, having <span class="math">\(k\)</span> as the innermost loop is a problem. That's because while for matrix <span class="math">\(A\)</span>, <span class="math">\(k\)</span> represents columns, for matrix <span class="math">\(B\)</span>, <span class="math">\(k\)</span> represents rows. If these are big matrices, we're likely to incur cache misses on every read from matrix <span class="math">\(B\)</span>! What can we do about this? As we discussed, <span class="math">\(k\)</span> represents columns of matrix <span class="math">\(A\)</span>. On the other hand, <span class="math">\(n\)</span> indexes into the columns of matrix <span class="math">\(B\)</span>. Let's leave the index that has to go down rows, i.e. <span class="math">\(k\)</span>, in the middle loop, while keeping the innermost loop working on rows of one of the matrices. For instance, let's make the loop over <span class="math">\(k\)</span> the middle loop, and the loop over <span class="math">\(n\)</span> the innermost loop.</p>
-<div class="highlight"><pre><span></span><span class="kt">void</span> <span class="nf">naiveIterativeMatmul</span><span class="p">(</span>
+<div class="highlight"><pre><span></span><span class="kt">void</span> <span class="nf">iterativeMatmulLoopReorder</span><span class="p">(</span>
         <span class="kt">float</span><span class="o">*</span> <span class="k">const</span> <span class="n">A</span><span class="p">,</span>
         <span class="kt">float</span><span class="o">*</span> <span class="k">const</span> <span class="n">B</span><span class="p">,</span>
         <span class="kt">float</span><span class="o">*</span> <span class="k">const</span> <span class="n">C</span><span class="p">,</span>
@@ -192,7 +194,46 @@ a_{21}*b_{11} + a_{22}*b_{21} + a_{23}*b_{31} &amp; a_{21}*b_{12} + a_{22}*b_{22
 </pre></div>
 
 
-<p>The above code took only 2,960 ms! Not surprisingly, hitting the caches matters. This technique is known as loop reordering or <a href="https://en.wikipedia.org/wiki/Loop_interchange">loop interchange</a>.</p>
+<p>The above code took only 70 ms! Not surprisingly, hitting the caches matters. This technique is known as loop reordering or <a href="https://en.wikipedia.org/wiki/Loop_interchange">loop interchange</a>.</p>
+<p>Let's try one more thing. Let's assume that we have the ability to just-in-time compile a function optimal for given matrix dimensions. Say for instance that this is some hidden LSTM state which we expect to use over and over for training or inference, so we can statically determnine the dimensions. Let's see what the impact of statically known dimensions is on performance. To do this, let's template the function:</p>
+<div class="highlight"><pre><span></span><span class="k">template</span> <span class="o">&lt;</span><span class="kt">int</span> <span class="n">M</span><span class="p">,</span> <span class="kt">int</span> <span class="n">N</span><span class="p">,</span> <span class="kt">int</span> <span class="n">K</span><span class="o">&gt;</span>
+<span class="kt">void</span> <span class="n">iterativeMatmulLoopReorderTempl</span><span class="p">(</span>
+        <span class="kt">float</span><span class="o">*</span> <span class="k">const</span> <span class="n">A</span><span class="p">,</span>
+        <span class="kt">float</span><span class="o">*</span> <span class="k">const</span> <span class="n">B</span><span class="p">,</span>
+        <span class="kt">float</span><span class="o">*</span> <span class="k">const</span> <span class="n">C</span><span class="p">)</span> <span class="p">{</span>
+
+    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">m</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">m</span> <span class="o">&lt;</span> <span class="n">M</span><span class="p">;</span> <span class="n">m</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">k</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">k</span> <span class="o">&lt;</span> <span class="n">K</span><span class="p">;</span> <span class="n">k</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">n</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="n">N</span><span class="p">;</span> <span class="n">n</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+                <span class="n">C</span><span class="p">[</span><span class="n">m</span> <span class="o">*</span> <span class="n">M</span>  <span class="o">+</span> <span class="n">n</span><span class="p">]</span> <span class="o">+=</span> <span class="n">A</span><span class="p">[</span><span class="n">m</span> <span class="o">*</span> <span class="n">M</span> <span class="o">+</span> <span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="n">B</span><span class="p">[</span><span class="n">k</span> <span class="o">*</span> <span class="n">K</span> <span class="o">+</span> <span class="n">n</span><span class="p">];</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<p>The above code took only 45 ms to execute! I decided to compare this runtime to GNU Octave:</p>
+<div class="highlight"><pre><span></span><span class="n">x</span> <span class="p">=</span> <span class="nb">randn</span><span class="p">(</span><span class="mi">1024</span><span class="p">,</span> <span class="mi">1024</span><span class="p">);</span>
+<span class="n">y</span> <span class="p">=</span> <span class="nb">randn</span><span class="p">(</span><span class="mi">1024</span><span class="p">,</span> <span class="mi">1024</span><span class="p">);</span>
+<span class="n">tic</span><span class="p">;</span> <span class="n">x</span><span class="o">*</span><span class="n">y</span><span class="p">;</span> <span class="n">toc</span><span class="p">;</span>
+</pre></div>
+
+
+<p>Octave tookj 35 ms. This isn't bad, we're close to performance from BLAS itself! Note that I didn't yet do any heavy optimization, such as manual vectorization (e.g. using <a href="https://en.wikipedia.org/wiki/Advanced_Vector_Extensions">AVX</a> <a href="https://en.wikipedia.org/wiki/Intrinsic_function">intrinsics</a> or <a href="https://en.wikipedia.org/wiki/Inline_assembler">inline assembly</a>), tiling, etc. Of course, note that it's unreasonable to compare a generic library such as the BLAS libraries used by Octave, NumPy, etc., against a dimension-templated function, which will only work for this particular dimension. Still, even before templating, we went down from 1,600 ms to 70 ms, and to within 2x of Octave's libraries. Let's also check NumPy (from Anaconda) while we're at it:</p>
+<div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">time</span>
+
+<span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">1024</span><span class="p">,</span> <span class="mi">1024</span><span class="p">)</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">1024</span><span class="p">,</span> <span class="mi">1024</span><span class="p">)</span>
+
+<span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
+<span class="n">z</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+<span class="k">print</span><span class="p">((</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">)</span>
+</pre></div>
+
+
+<p>NumPy took 40 ms to execute the matrix multiplication.</p>
 <h3>Caching issues with the naive iterative algorithm</h3>
 <p>We briefly discussed how the naive algorithm had issues with caching, because of the loop order. Unfortunately, even loop reordering isn't ideal. For one, even if data is prefetched, we're not breaking up the problem to fit out cache well. A much better way to break up the processing in a way that would fit the cache is via tiling.</p>
 <p>Before we get into tiling, let's review hardware caches.</p>
