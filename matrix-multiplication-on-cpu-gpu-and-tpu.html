@@ -236,13 +236,13 @@ a_{21}*b_{11} + a_{22}*b_{21} + a_{23}*b_{31} &amp; a_{21}*b_{12} + a_{22}*b_{22
 </tr>
 <tr>
 <td>NVMe SSD</td>
-<td>25000</td>
-<td>62500</td>
+<td>25,000</td>
+<td>62,500</td>
 </tr>
 <tr>
 <td>SATA SSD</td>
-<td>100000</td>
-<td>250000</td>
+<td>100,000</td>
+<td>250,000</td>
 </tr>
 </tbody>
 </table>
@@ -253,7 +253,7 @@ a_{21}*b_{11} + a_{22}*b_{21} + a_{23}*b_{31} &amp; a_{21}*b_{12} + a_{22}*b_{22
 - The cache has an omniscient residency/eviction policy. This assumes a perfect policy not just accounting for the past, but also the future, anticipating what may be needed next.</p>
 <p>It turns out that while such assumptions are unreasonable, they can approximate a practical cache relatively well. The least-recently used assumption can replace the assumption of omniscience. Sleator and Tarjan (1985) <a href="https://www.cs.cmu.edu/~sleator/papers/amortized-efficiency.pdf">demonstrated</a> that given an omniscient cache with M bytes and Q cache misses, it can be replaced with a cache with an LRU cache with 2M bytes and 2Q cache misses. Therefore, the omniscience assumption can be approximated by a real, practical cache up to a small, known constant factor. The full associativity assumption is also true up to a point, e.g. L1 caches in recent Intel Core i7 CPUs are 8-way set associative, etc.</p>
 <p>We also need to make a "tall cache" assumption, which means that the number of bytes per cache line is much less than the number of cache lines. Formally, if a cache line has B bytes and the cache has M bytes total (giving us <span class="math">\(M/B\)</span> cache lines), we assume that <span class="math">\(B^2 &lt; c*M\)</span> for <span class="math">\(c \le 1\)</span>.</p>
-<p>This is also a reasonable assumption for practical caches. For example, on a Core i7-8700K, there's an L1 cache of 32 KB per core, and each cache line is 64 bytes. In this case, <span class="math">\(B^2=4096\)</span>, which is 4KB, which is much less than 32 KB.</p>
+<p>This is also a reasonable assumption for practical caches. For example, on a Core i7-8700K, there's an L1 cache of 32 KB per core, and each cache line is 64 bytes. In this case, <span class="math">\(B^2=4,096\)</span>, which is 4KB, which is much less than 32 KB.</p>
 <p>Why do we need to make a tall cache assumption? Essentially, this is because we need to be able to have multiple smaller items that are able to be stored in the cache, rather than fetching one gigantic item when we store. For instance, let's imagine that we had a single cache line of 32 KB, and we wanted to read a matrix down a row. A single read that resulted in a cache miss would result in storing contiguous 32 KB of memory in the cache, but we only needed one element per row, so the other elements for that row would be polluting the cache. Ideally, we'd want the cache line to be small, since then we could store small chunks from various locations in memory. However, the cache line has to be big enough to make contiguous reads efficient, by filling up the memory bus when the read is done. We will see more of that in the case of GPUs.</p>
 <p>Given all the above, let's assume either an omniscient or LRU cache, as convenient, that is fully or nearly fully associative, with a tall cache assumption. The cache has <span class="math">\(M\)</span> bytes total and <span class="math">\(B\)</span> bytes per cache line, which means that it has <span class="math">\(\frac{M}{B}\)</span> cache lines.</p>
 <h3>Iterative Algorithm with tiling</h3>
