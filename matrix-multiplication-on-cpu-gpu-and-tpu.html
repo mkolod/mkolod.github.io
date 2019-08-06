@@ -181,9 +181,70 @@ a_{21}*b_{11} + a_{22}*b_{21} + a_{23}*b_{31} &amp; a_{21}*b_{12} + a_{22}*b_{22
 
 <p>The above code took only 2,960 ms! Not surprisingly, hitting the caches matters. This technique is known as loop reordering or <a href="https://en.wikipedia.org/wiki/Loop_interchange">loop interchange</a>.</p>
 <h3>Caching issues with the naive iterative algorithm</h3>
-<p>TODO</p>
+<p>We briefly discussed how the naive algorithm had issues with caching, because of the loop order. Unfortunately, even loop reordering isn't ideal. For one, even if data is prefetched, we're not breaking up the problem to fit out cache well. A much better way to break up the processing in a way that would fit the cache is via tiling.</p>
+<p>Before we get into tiling, let's review hardware caches.</p>
+<p>First of all, hardware caches are supposed to be fast. These are small chunks of memory that sit on the same chip as the CPU, and use static RAM (SRAM) instead of dynamic RAM (DRAM) like the main memory that we're used to. SRAM uses flip-flops and is much faster than DRAM, which uses capacitors. Unfortunately, SRAM takes up a huge amount of chip real estate, and uses a lot of power, which is why main RAM is dynamic. This is typical of any memory hierarchy in a computer, where we have a clear speed-capacity trade-off - registers are fast but tiny, L1 cache is slightly bigger but also a bit slower, DRAM is much larger but slower still, and SSDs have the highest capacity but are slower still. Here are <a href="https://www.prowesscorp.com/computer-latency-at-a-human-scale/">some statistics</a> in CPU clock cycles that show the memory access time depending on the device being accessed.</p>
+<p>Of course, these numbers may vary, they are just here to give you a general idea of the orders of magnitude.</p>
+<table>
+<thead>
+<tr>
+<th>Device</th>
+<th>Access Time (ns)</th>
+<th>CPU cycles</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>register</td>
+<td>0.4</td>
+<td>1</td>
+</tr>
+<tr>
+<td>L1 cache</td>
+<td>0.9</td>
+<td>2.25</td>
+</tr>
+<tr>
+<td>L2 cache</td>
+<td>2.8</td>
+<td>7</td>
+</tr>
+<tr>
+<td>L3 cache</td>
+<td>28</td>
+<td>70</td>
+</tr>
+<tr>
+<td>DRAM</td>
+<td>100</td>
+<td>250</td>
+</tr>
+<tr>
+<td>NVMe SSD</td>
+<td>2500</td>
+<td>62500</td>
+</tr>
+<tr>
+<td>SATA SSD</td>
+<td>100000</td>
+<td>2500</td>
+</tr>
+</tbody>
+</table>
+<p>Clearly caching matters! If a CPU is sitting idle waiting thousands of cycles for memory access, it's not spending those cycles doing any computation. Needless to say, optimizing cache use will be key to improving performance of our matrix multiplication algorithm.</p>
+<p>Let's cover some basics of computer caches. We won't go into too much detail, so feel to review more at your own leisure <a href="https://en.wikipedia.org/wiki/Cache_(computing)">here</a>. </p>
+<p>Caches aren't exactly ideal in practice. They tend to use heuristics for eviction policies, they aren't fully <a href="https://en.wikipedia.org/wiki/Cache_placement_policies">associative</a>, etc. However, it turns out that practical caches can be assumed to be ideal for practical code analysis to simplify things. An ideal cache has several characteristics:
+- It is fully associative. This means that there exists a single cache set with multiple cache lines, and a given memory block can occupy any of them. If we take a cache line to be of size 1 of some units, this would mean that the cache can be viewed as a matrix with m rows and 1 column.
+- The cache has an omniscient residency/eviction policy. This assumes a perfect policy not just accounting for the past, but also the future, anticipating what may be needed next.</p>
+<p>It turns out that while such assumptions are unreasonable, they can approximate a practical cache relatively well. The least-recently used assumption can replace the assumption of omniscience. Sleator and Tarjan (1985) <a href="https://www.cs.cmu.edu/~sleator/papers/amortized-efficiency.pdf">demonstrated</a> that given an omniscient cache with M bytes and Q cache misses, it can be replaced with a cache with an LRU cache with 2M bytes and 2Q cache misses. Therefore, the omniscience assumption can be approximated by a real, practical cache up to a small, known constant factor. The full associativity assumption is also true up to a point, e.g. L1 caches in recent Intel Core i7 CPUs are 8-way set associative, etc.</p>
+<p>We also need to make a "tall cache" assumption, which means that the number of bytes per cache line is much less than the number of cache lines. Formally, if a cache line has B bytes and the cache has M bytes total (giving us <span class="math">\(M/B\)</span> cache lines), we assume that <span class="math">\(B^2 &lt; c*M\)</span> for <span class="math">\(c \le 1\)</span>.</p>
+<p>This is also a reasonable assumption for practical caches. For example, on a Core i7-8700K, there's an L1 cache of 32 KB per core, and each cache line is 64 bytes. In this case, <span class="math">\(B^2=4096\)</span>, which is 4KB, which is much less than 32 KB.</p>
+<p>Why do we need to make a tall cache assumption? Essentially, this is because we need to be able to have multiple smaller items that are able to be stored in the cache, rather than fetching one gigantic item when we store. For instance, let's imagine that we had a single cache line of 32 KB, and we wanted to read a matrix down a row. A single read that resulted in a cache miss would result in storing contiguous 32 KB of memory in the cache, but we only needed one element per row, so the other elements for that row would be polluting the cache. Ideally, we'd want the cache line to be small, since then we could store small chunks from various locations in memory. However, the cache line has to be big enough to make contiguous reads efficient, by filling up the memory bus when the read is done. We will see more of that in the case of GPUs.</p>
+<p>Given all the above, let's assume either an omniscient or LRU cache, as convenient, that is fully or nearly fully associative, with a tall cache assumption. The cache has <span class="math">\(M\)</span> bytes total and <span class="math">\(B\)</span> bytes per cache line, which means that it has <span class="math">\(\frac{M}{B}\)</span> cache lines.</p>
 <h3>Iterative Algorithm with tiling</h3>
 <p>TODO</p>
+<h3>Loop unrolling and templated implementations</h3>
+<p>Templated implementations are impossible to pre-compile for all but typical dimensions, but we can just-in-time (JIT) compile them if they repeat, by profiling for hotspots.</p>
 <h3>Problems with Iterative algorithm on the CPU</h3>
 <p>Tiling is not cache-agnostic.
 Cache can be occupied by other items in a multi-process setting.</p>
