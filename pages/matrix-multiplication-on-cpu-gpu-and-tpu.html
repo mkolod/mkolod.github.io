@@ -9,10 +9,9 @@
         <meta property="og:type" content="article" />
         <meta name="twitter:card" content="summary">
 
-<meta name="keywords" content="matmul, GEMM, linear algebra, " />
 
 <meta property="og:title" content="Matrix Multiplication on CPU, GPU and TPU "/>
-<meta property="og:url" content="/matrix-multiplication-on-cpu-gpu-and-tpu.html" />
+<meta property="og:url" content="/pages/matrix-multiplication-on-cpu-gpu-and-tpu.html" />
 <meta property="og:description" content="Hidden GEMMs: How to optimize matrix multiplication on CPU and GPU TODO: TPU Importance of matrix multiplication Matrix multiplication is a fundamental operation in scientific computing. Here are just a few of countless uses of this fundamental linear algebra operation: compactly notating systems of linear equations solving least squares problems …" />
 <meta property="og:site_name" content="Marek Kolodziej&#39;s Blog" />
 <meta property="og:article:author" content="Marek Kolodziej" />
@@ -29,7 +28,6 @@
         <link rel="stylesheet" type="text/css" href="/theme/css/elegant.css" media="screen">
         <link rel="stylesheet" type="text/css" href="/theme/css/admonition.css" media="screen">
         <link rel="stylesheet" type="text/css" href="/theme/css/custom.css" media="screen">
-
 
 
     </head>
@@ -51,6 +49,7 @@
                                        "/"
                                     >Home</a>
                                 </li>
+                                <li  class="active"><a href="/pages/matrix-multiplication-on-cpu-gpu-and-tpu.html">Matrix Multiplication on CPU, GPU and TPU</a></li>
                                 <li ><a href="/categories">Categories</a></li>
                                 <li ><a href="/tags">Tags</a></li>
                                 <li ><a href="/archives">Archives</a></li>
@@ -64,20 +63,16 @@
                 <div class="row-fluid">
                     <div class="span1"></div>
                     <div class="span10">
-<article itemscope>
+<article>
 <div class="row-fluid">
     <header class="page-header span10 offset2">
-        <h1>
-            <a href="/matrix-multiplication-on-cpu-gpu-and-tpu.html">
-                Matrix Multiplication on CPU, GPU and TPU
-            </a>
-        </h1>
+    <h1><a href="/pages/matrix-multiplication-on-cpu-gpu-and-tpu.html"> Matrix Multiplication on CPU, GPU and TPU  </a></h1>
     </header>
 </div>
 
 <div class="row-fluid">
         <div class="span8 offset2 article-content">
-            
+
             <h2>Hidden GEMMs: How to optimize matrix multiplication on CPU and GPU</h2>
 <h3>TODO: TPU</h3>
 <h3>Importance of matrix multiplication</h3>
@@ -120,8 +115,8 @@ a_{21}*b_{11} + a_{22}*b_{21} + a_{23}*b_{31} &amp; a_{21}*b_{12} + a_{22}*b_{22
 <li>RAM: 32 GB DDR4 @ 2.4 GHz (G-Skill Ripjaws F4-2400C15-16GVR)</li>
 <li>Motherboard: ASUS PRIME X299-A motherboard</li>
 <li>OS: Ubuntu 16.04.6 LTS (Xenial Xerus)</li>
-<li>Compiler: GCC 5.4.0 (also others for comparison, if explicitly stated)</li>
-<li>Compiler flags: <code>-O3 -march=native -funroll-loops</code> (unless specified otherwise)</li>
+<li>Compiler: GCC 5.4.0</li>
+<li>Compiler flags: <code>-O3 -march=native</code> (unless specified otherwise)</li>
 </ul>
 <h3>Matrix dimensions for our experiments</h3>
 <p>Let's assume that M = N = K = 1024 for simplicity. </p>
@@ -216,7 +211,6 @@ a_{21}*b_{11} + a_{22}*b_{21} + a_{23}*b_{31} &amp; a_{21}*b_{12} + a_{22}*b_{22
 </pre></div>
 
 
-<p>Since we set <span class="math">\(M\)</span>, <span class="math">\(N\)</span> and <span class="math">\(K\)</span> to equal 1,024, we instantiate the templated function with those values.</p>
 <p>The above code took only 45 ms to execute! I decided to compare this runtime to GNU Octave (version 4.0.0):</p>
 <div class="highlight"><pre><span></span><span class="n">x</span> <span class="p">=</span> <span class="nb">randn</span><span class="p">(</span><span class="mi">1024</span><span class="p">,</span> <span class="mi">1024</span><span class="p">);</span>
 <span class="n">y</span> <span class="p">=</span> <span class="nb">randn</span><span class="p">(</span><span class="mi">1024</span><span class="p">,</span> <span class="mi">1024</span><span class="p">);</span>
@@ -224,8 +218,7 @@ a_{21}*b_{11} + a_{22}*b_{21} + a_{23}*b_{31} &amp; a_{21}*b_{12} + a_{22}*b_{22
 </pre></div>
 
 
-<p>Octave took 35 ms. This isn't bad, we're close to performance from BLAS itself! Note that I didn't yet do any heavy optimization, such as manual vectorization (e.g. using <a href="https://en.wikipedia.org/wiki/Advanced_Vector_Extensions">AVX</a> <a href="https://en.wikipedia.org/wiki/Intrinsic_function">intrinsics</a> or <a href="https://en.wikipedia.org/wiki/Inline_assembler">inline assembly</a>), tiling, etc. </p>
-<p>While we're at it, let's also check NumPy (from Anaconda, version 1.16.4):</p>
+<p>Octave took 35 ms. This isn't bad, we're close to performance from BLAS itself! Note that I didn't yet do any heavy optimization, such as manual vectorization (e.g. using <a href="https://en.wikipedia.org/wiki/Advanced_Vector_Extensions">AVX</a> <a href="https://en.wikipedia.org/wiki/Intrinsic_function">intrinsics</a> or <a href="https://en.wikipedia.org/wiki/Inline_assembler">inline assembly</a>), tiling, etc. Of course, note that it's unreasonable to compare a generic library such as the BLAS libraries used by Octave, NumPy, etc., against a dimension-templated function, which will only work for this particular dimension. Still, even before templating, we went down from 1,600 ms to 70 ms, and to within 2x of Octave's libraries. Let's also check NumPy (from Anaconda, version 1.16.4) while we're at it:</p>
 <div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">time</span>
 
@@ -238,7 +231,7 @@ a_{21}*b_{11} + a_{22}*b_{21} + a_{23}*b_{31} &amp; a_{21}*b_{12} + a_{22}*b_{22
 </pre></div>
 
 
-<p>Of course, note that it's unreasonable to compare a generic library such as the BLAS libraries used by Octave, NumPy, etc., against a dimension-templated function, which will only work for this particular dimension. Still, even before templating, we went down from 1,600 ms to 70 ms, and to within 2x of Octave's libraries. Note though that if you have a repetitive problem, such as when running deep learning inference, which depends on static matrix sizes, we were close enough to the leading libraries that if we were to beat them, we could have chosen to run a custom function instead. So, for long-running apps that hog data centers, make sure to profile and not take anything for granted.</p>
+<p>NumPy took 40 ms to execute the matrix multiplication.</p>
 <h3>Cache behavior depending on matrix sizes</h3>
 <p>Let's assume <span class="math">\(M\)</span> bytes of cache and <span class="math">\(B\)</span> bytes per cache line, and consequently <span class="math">\(\frac{M}{B}\)</span> cache lines. For matrix dimensions, let's assume Since <span class="math">\(M\)</span>=<span class="math">\(N\)</span>=<span class="math">\(K\)</span>, let's call them all <span class="math">\(N\)</span>.</p>
 <p><em>Case 1</em>: <span class="math">\(N&gt;\)</span><span class="math">\(\frac{M}{B}\)</span></p>
@@ -311,23 +304,8 @@ Unfortunately, even loop reordering isn't ideal. For one, even if data is prefet
 <p>Why do we need to make a tall cache assumption? Essentially, this is because we need to be able to have multiple smaller items that are able to be stored in the cache, rather than fetching one gigantic item when we store. For instance, let's imagine that we had a single cache line of 32 KB, and we wanted to read a matrix down a row. A single read that resulted in a cache miss would result in storing contiguous 32 KB of memory in the cache, but we only needed one element per row, so the other elements for that row would be polluting the cache. Ideally, we'd want the cache line to be small, since then we could store small chunks from various locations in memory. However, the cache line has to be big enough to make contiguous reads efficient, by filling up the memory bus when the read is done. We will see more of that in the case of GPUs.</p>
 <p>Given all the above, let's assume either an omniscient or LRU cache, as convenient, that is fully or nearly fully associative, with a tall cache assumption. The cache has <span class="math">\(M\)</span> bytes total and <span class="math">\(B\)</span> bytes per cache line, which means that it has <span class="math">\(\frac{M}{B}\)</span> cache lines.</p>
 <h3>Iterative Algorithm with Tiling</h3>
-<p>Let's break our large matrix into sub-matrices or tiles. If these tiles are small enough to fit in the cache (say L1), then we shouldn't have to care whether the loops are reordered or not. Of course, since each <span class="math">\(x,y\)</span> coordinate in the output matrix <span class="math">\(C\)</span> has to be the result of multiplying an entire row vector <span class="math">\(i\)</span> from matrix <span class="math">\(A\)</span> by the entire column vector <span class="math">\(j\)</span> of matrix <span class="math">\(B\)</span>, taking small square tiles out of the matrix from both matrices will only give us partial results for each output coordinate, so we'll have to sum up the products coming out of multiplying individual tiles. For example, to calculate the blue tile in matrix <span class="math">\(C\)</span> in the figure below, we'll need to take two partial results from tile multiplications.</p>
-<p><img alt="Tiling Diagram" src="./images/Matmul.svg"></p>
-<p>License: CC-BY</p>
-<p>Pages 10
-Find a Page…
-Home
-Compatibility
-Development Notes
-Markdown Cheatsheet
-Markdown Here Cheatsheet
-Other Markdown Tools
-Press, Posts, Reviews, Etc.
-Reviews
-Tips and Tricks
-Troubleshooting
-Clone this wiki locally</p>
-<p>Remember that we'll need to tune the implementation to our actual CPU. I have an Intel&reg; Core&trade; i7-7800X. We can Google around and <a href="http://www.cpu-world.com/CPUs/Core_i7/Intel-Core%20i7%20i7-7800X.html">find</a> the following details about that CPU:</p>
+<p><strong>Add a tiling diagram</strong></p>
+<p>Remember that we'll need to tune the implementation to our actual CPU. I have an Intel&reg; Core&trade; i7-7800X. We can Google around and <a href="http://www.cpu-world.com/CPUs/Core_i7/Intel-Core%20i7%20i7-7800X.html">find</a> the following detail about that CPU:</p>
 <ul>
 <li>L1 cache: 32 KB / core</li>
 <li>L2 cache: 1 MB / core</li>
@@ -360,89 +338,21 @@ Clone this wiki locally</p>
 </pre></div>
 
 
-<p>Note that now, we don't need to reorder the loops, since cache hits will be ensured by the small size of the tiles in the inner loops.</p>
-<p>The above kernel combines the flexibility of runtime dimensions for <span class="math">\(M\)</span>, <span class="math">\(N\)</span> and <span class="math">\(K\)</span>, while compiling for a fixed tile size. Thus, the compiler can make some static optimizations for a fixed <span class="math">\(T\)</span>, while not requiring recompilation as matrix dimensions change. This way, one can look up the best tile size for a given CPU and run that particular kernel.</p>
-<p>The above code leaves room for improvement, since we keep recomputing the inner loop boundaries every time. Let's refactor the boundary conditions as follows:</p>
-<div class="highlight"><pre><span></span><span class="nt">template</span> <span class="o">&lt;</span><span class="nt">int</span> <span class="nt">T</span><span class="o">&gt;</span>
-<span class="nt">void</span> <span class="nt">naiveIterativeMatmulTiled</span><span class="o">(</span>
-        <span class="nt">float</span><span class="o">*</span> <span class="nt">const</span> <span class="nt">A</span><span class="o">,</span>
-        <span class="nt">float</span><span class="o">*</span> <span class="nt">const</span> <span class="nt">B</span><span class="o">,</span>
-        <span class="nt">float</span><span class="o">*</span> <span class="nt">const</span> <span class="nt">C</span><span class="o">,</span>
-        <span class="nt">const</span> <span class="nt">int</span> <span class="nt">M</span><span class="o">,</span>
-        <span class="nt">const</span> <span class="nt">int</span> <span class="nt">N</span><span class="o">,</span>
-        <span class="nt">const</span> <span class="nt">int</span> <span class="nt">K</span><span class="o">)</span> <span class="p">{</span>
-
-    <span class="err">for</span> <span class="err">(int</span> <span class="err">m</span> <span class="err">=</span> <span class="err">0</span><span class="p">;</span> <span class="err">m</span> <span class="err">&lt;</span> <span class="err">M</span><span class="p">;</span> <span class="err">m</span> <span class="err">+=</span> <span class="err">T)</span> <span class="err">{</span>
-        <span class="err">for</span> <span class="err">(int</span> <span class="err">n</span> <span class="err">=</span> <span class="err">0</span><span class="p">;</span> <span class="err">n</span> <span class="err">&lt;</span> <span class="err">N</span><span class="p">;</span> <span class="err">n</span> <span class="err">+=</span> <span class="err">T)</span> <span class="err">{</span>
-            <span class="err">for</span> <span class="err">(int</span> <span class="err">k</span> <span class="err">=</span> <span class="err">0</span><span class="p">;</span> <span class="err">k</span> <span class="err">&lt;</span> <span class="err">K</span><span class="p">;</span> <span class="err">k</span> <span class="err">+=</span> <span class="err">T)</span> <span class="err">{</span>
-
-                <span class="err">const</span> <span class="err">int</span> <span class="err">minMt</span> <span class="err">=</span> <span class="n">std</span><span class="p">:</span><span class="o">:</span><span class="nf">min</span><span class="p">(</span><span class="n">m</span> <span class="o">+</span> <span class="n">T</span><span class="p">,</span> <span class="n">M</span><span class="p">);</span>
-                <span class="err">const</span> <span class="err">int</span> <span class="err">minNt</span> <span class="err">=</span> <span class="n">std</span><span class="p">:</span><span class="o">:</span><span class="nf">min</span><span class="p">(</span><span class="n">n</span> <span class="o">+</span> <span class="n">T</span><span class="p">,</span> <span class="n">N</span><span class="p">);</span>
-                <span class="err">const</span> <span class="err">int</span> <span class="err">minKt</span> <span class="err">=</span> <span class="n">std</span><span class="p">:</span><span class="o">:</span><span class="nf">min</span><span class="p">(</span><span class="n">k</span> <span class="o">+</span> <span class="n">T</span><span class="p">,</span> <span class="n">K</span><span class="p">);</span>
-
-                <span class="err">for</span> <span class="err">(int</span> <span class="err">mt</span> <span class="err">=</span> <span class="err">m</span><span class="p">;</span> <span class="err">mt</span> <span class="err">&lt;</span> <span class="err">minMt</span><span class="p">;</span> <span class="err">mt++)</span> <span class="err">{</span>
-                    <span class="err">for</span> <span class="err">(int</span> <span class="err">nt</span> <span class="err">=</span> <span class="err">n</span><span class="p">;</span> <span class="err">nt</span> <span class="err">&lt;</span> <span class="err">minNt</span><span class="p">;</span> <span class="err">nt++)</span> <span class="err">{</span>
-                        <span class="err">for</span> <span class="err">(int</span> <span class="err">kt</span> <span class="err">=</span> <span class="err">k</span><span class="p">;</span> <span class="err">kt</span> <span class="err">&lt;</span> <span class="err">minKt</span><span class="p">;</span> <span class="err">kt++)</span> <span class="err">{</span>
-
-                            <span class="err">C</span><span class="cp">[</span><span class="nx">mt</span> <span class="o">*</span> <span class="nx">M</span> <span class="o">+</span> <span class="nx">nt</span><span class="cp">]</span> <span class="err">+=</span> <span class="err">A</span><span class="cp">[</span><span class="nx">mt</span> <span class="o">*</span> <span class="nx">M</span> <span class="o">+</span> <span class="nx">kt</span><span class="cp">]</span> <span class="err">*</span> <span class="err">B</span><span class="cp">[</span><span class="nx">kt</span> <span class="o">*</span> <span class="nx">K</span> <span class="o">+</span> <span class="nx">nt</span><span class="cp">]</span><span class="p">;</span>
-                        <span class="p">}</span>
-                    <span class="err">}</span>
-                <span class="err">}</span>
-            <span class="err">}</span>
-        <span class="err">}</span>
-    <span class="err">}</span>
-<span class="err">}</span>
-</pre></div>
-
-
-<p>The tile size indicated by the previous cache discussion, for optimal hits of L1, is <span class="math">\(\sqrt(32*1024)<div class="math">$$\approx$$</div>181\)</span>. Note though that this only lets us fit one of the matrices in cache, but we need to fit at least A and B. Thus, let's set the tile size to 64. Executing this took 694 ms. What went wrong? It turns out that the optimal tile size may be wrong if the caches can get evicted by other applications running in the background (see next section). After tuning the tile size, I found that for the CPU in question, the best tile size ended up being 16. Even then, execution took 470 ms. It looks like our tiled solution isn't nearly as good as the textbooks on performance engineering say it should be.</p>
-<h3>Problems tiling on the CPU</h3>
+<p>First note that we no longer needed loop reordering, because we tile in a way that optimizes cache hits.</p>
+<p>Note also that we only templated the tile size, while leaving matrix dimensions as function arguments. This is a pretty decent compromise between the perforxmance benefits of templates and the runtime flexibility of runtime parameters - we can still process any matrix, while just predetermining the tile size at compile time.</p>
+<p>Let's compile this with just <code>-O3</code>, without <code>-march=native</code>.Setting the tile size to 32, we were able to run this function in 30 ms. This is really promising: note that the non-templated matrix dimensions, even with loop reordering, previously gave us a running time of 70 ms, while the templated dimensions still had a running time of 45 ms, while being completely inflexible (we needed to know <span class="math">\(M\)</span>, <span class="math">\(N\)</span> and <span class="math">\(K\)</span> at compile time, either ahead of time (AOT) or just in time (JIT)). Note also that we did away with an architecture-specific build - we could run this on Haswell, Broadwell or Skylake. Note that this tiled version let us beat NumPy 1.16.4 (40 ms) and Octave 4.0.0 (35 ms), without writing any manual vectorization or assembly code!</p>
+<h3>Problems with Iterative algorithm on the CPU</h3>
 <p>Tiling is not cache-agnostic. This means that if we pick a tile size that's optimal for a CPU with a given cache size and then end up running the same code on a CPU with a smaller cache size (assuming the same instruction set), the performance on the CPU with the smaller cache might end up abysmal. Note that we might essentially end up with the case of the <span class="math">\(\Theta\)</span>(<span class="math">\(n^3\)</span>) cache misses. The other headache is that the number of unique implementations would need to be dependent on all cache hierarchies. The tiling discussion above is based on one level of caching, but modern CPUs have 3 levels (L1, L2, L3). This means we might need to add extra loops to cover tiles for L2, not just L1, and do the same for L3.</p>
-<p>Another major concern with cache size-tuned algorithms is that they make the assumption that nothing else can run on the CPU at any given time. This might be an appropriate assumption to make if we were using a microcontroller, but on any platform with a running operating system, it's unrealistic. Even if the CPU does not need to run any other processes in the background, the kernel itself needs to context switch between OS housekeeping tasks (say interrupt servicing) and running the application. The context switch between the kernel and the application can result in purging caches to make room for the task being done by the kernel. The problem is obviously worse if the kernel needs to context switch not just between itself and our matrix multiplying application, but other <a href="https://en.wikipedia.org/wiki/User_space">userspace</a> applications. This for instance is a serious concern if we try to load up the cache with a lot of data at once, since it may be evicted due to a context switch.</p>
-<p>Overall, the fact that tiling is not cache-agnostic, the effect of context switches on cache evictions, and the abysmal practical performance seem to indicate so far that loop reordering is the preferred way to go.</p>
-<h3>Compiler considerations</h3>
-<p>I had a gut feeling that perhaps the compiler wasn't doing a good job with tiled code, so I decided to try newer versions of GCC. Unfortunately, they ended up being worse, particularly GCC 8. This is likely due to the compiler patches introduced to combat <a href="https://en.wikipedia.org/wiki/Spectre_(security_vulnerability)">Spectre</a>-based attacks. However, I decided to check other compilers available as default packages for my OS (Ubuntu 16.04.6 LTS). Of course, Clang is an alternative to GCC. </p>
-<p>Let's compare the results:</p>
-<p><strong>GCC 5.4.0</strong></p>
-<p>Loop unrolling (non-templated <span class="math">\(MNK\)</span>): 70 ms
-Loop unrolling (templated <span class="math">\(MNK\)</span>): 40 ms
-Tiling (best tile size=16): 470 ms</p>
-<p><strong>Clang 3.8.0</strong></p>
-<p>Loop unrolling (non-templated <span class="math">\(MNK\)</span>): 70 ms
-Loop unrolling (templated <span class="math">\(MNK\)</span>): 70 ms
-Tiling (best tile size=16): 80 ms</p>
-<p>All compilations were done with the same compiler flage (<code>-O3 -march=native -funroll-loops</code>).</p>
-<p>These results are stunning! The biggest difference of course is how drastically different the performance of tiled code is. Note that I've seen this by comparing other compilers, so it's not a fluke. In general, the performance gain of simple loop reordering is very stable, while the gains from tiling have extremely large variation. The lesson here is: don't believe textbooks, measure performance for everything you do. Or, as the Cold War saying goes: "<a href="https://en.wikipedia.org/wiki/Trust,_but_verify">trust, but verify</a>." </p>
-<p>Yet again, loop reordering seems to win over tiling. Note though that tiling is a good strategy for processors where we usually don't expect other concurrent workloads, such as GPUs - if we expect to fill up the GPU with a matrix multiplication kernel, many of the concerns raised here go away. Also, one can think of tiling in the context of divide-and-conquer (see below), where sequential processing of the tile is the base case of that algorithm.</p>
+<p>Another major concern with cache size-tuned algorithms is that they make the assumption that nothing else can run on the CPU at any given time. This might be an appropriate assumption to make if we were using a microcontroller, but on any platform with a running operating system, it's unrealistic. Even if the CPU does not need to run any other processes in the background, the kernel itself needs to context switch between OS housekeeping tasks (say interrupt servicing) and running the application. The context switch between the kernel and the application can result in purging caches to make room for the task being done by the kernel. The problem is obviously worse if the kernel needs to context switch not just between itself and our matrix multiplying application, but other <a href="https://en.wikipedia.org/wiki/User_space">userspace</a> applications.</p>
+<p>Cache can be occupied by other items in a multi-process setting.</p>
 <h3>Divide-and-conquer algorithm</h3>
 <p>The divide-and-conquer algorithm is cache-agnostic, in that it doesn't depend on the tile size. Since it's based on the <a href="https://en.wikipedia.org/wiki/Fork%E2%80%93join_model">fork-join</a> paradigm, it can also be implemented in a way that exploits multi-core processing. </p>
-<p>Here's a mathematical representation of this concept. Let's divide both matrices into 4 <a href="https://en.wikipedia.org/wiki/Block_matrix">submatrices</a>, i.e. partitioning vertically and horizontally.</p>
-<div class="math">$$
-A = \begin{bmatrix}
-    A_{11} &amp; A_{12} \\
-    A_{21} &amp; A_{22}
-  \end{bmatrix}
-$$</div>
-<div class="math">$$
-B = \begin{bmatrix}
-    B_{11} &amp; B_{12} \\
-    B_{21} &amp; B_{22}
-  \end{bmatrix}
-$$</div>
-<div class="math">$$
-C = \begin{bmatrix}
-A_{11}B_{11} + A_{12}B_{21} &amp; A_{11}B_{12} + A_{12}B_{22} \\
-A_{21}B_{11} + A_{22}B_{21} &amp; A_{21}B_{12} + A_{22}B_{22}
-\end{bmatrix}
-$$</div>
-<p>We can of course break up these matrices recursively and stop at the base case of having to multiply two elements together. Of course, the performance of an algorithm with a trivial base case would be horrendous, since the overhead of function calls would overshadow any data fetches and compute. However, if you think about it, a larger base case essentially ends up behaving like a tile, so the promise of being cache-agnostic is false if we have real performance considerations. That said, divide and conquer lets us at least use multiple cores, so we can combine that with a tile-based base case and multi-core processing to further improve performance. For now, let's write down the algorithm.</p>
-<p><strong>TODO: Write down the algorithm for Divide and Conquer.</strong></p>
-<p><strong>TODO: Write about non-square matrices and cache behavior for Divide and Conquer</strong></p>
-<p><strong>TODO: Implement divide and conquer with loop reordering to show gains from multi-core on large matrices.</strong></p>
 <h3>What we didn't cover</h3>
-<p>We clearly didn't cover vector processing on the CPU in detail, using instruction sets such as <a href="https://en.wikipedia.org/wiki/Advanced_Vector_Extensions">AVX</a> on x86 and <a href="https://en.wikipedia.org/wiki/ARM_architecture#Advanced_SIMD_(NEON)">NEON</a> on ARM. These will be covered in separate blog posts. Fortunately, in practice, using <code>-O3 -march=native</code> tends to benefit from some vectorization generated by the compiler, although usually it's not nearly good enough unless we know all dimensions statically. Hand-written assembly code would tend to do better, but that's a topic for another blog post.</p>
-<p>Also, there exist algorithms that do less work than <span class="math">\(\Theta(M*N*K)\)</span>, such as <a href="https://en.wikipedia.org/wiki/Strassen_algorithm">Strassen's algorithm</a>, but it deserves its own blog post, so I won't cover it now. Also, Strassen's algorithm can have worse numerical accuracy, so that's another reason to give it the detailed treatment that it deserves in a separate post. There are also other algorithms which has even better complexity than Strassen's algorithm, such as <a href="https://en.wikipedia.org/wiki/Coppersmith%E2%80%93Winograd_algorithm">Coppersmith-Winograd</a>, however these algorithms have gigantic constant factors, that are big enough that the better big-O performance only pays off for big enough problems that they don't fit on modern computers (that is, they are <a href="https://en.wikipedia.org/wiki/Galactic_algorithm">galactic algorithms</a>).</p>
+<p>We clearly didn't cover vector processing on the CPU in detail, using instruction sets such as <a href="https://en.wikipedia.org/wiki/Advanced_Vector_Extensions">AVX</a> on x86 and <a href="https://en.wikipedia.org/wiki/ARM_architecture#Advanced_SIMD_(NEON)">NEON</a> on ARM. These will be covered in separate blog posts.</p>
+<p>We also didn't cover multi-core matrix multiplication. We can combine optimized single-core implementations (using tiling and vector instructions) with multi-core solutions. If we assume that we have the whole machine to ourselves, or at least that there exist idle cycles ready to be used, then we might also distribute the work among CPUs, in a way similar to tiling. Or, we could simply stripe the matrix so that for instance if we have X cores, the first core is working on only 1/X of the rows of the output matrix C, which corresponds to the 1/X rows of the first input matrix A. Note that we might end up fighting for CPU bandwidth at some point, but with good enough cache utilization (e.g. due to tiling), we should have enough bandwidth to keep a few cores occupied. Several cores may potentially fight for L3 cache, but they will at least have their own L1 and L2 caches to work off of. I might devote a future post to multi-threaded matrix multiplication on the CPU, but we will also cover this in the context of massively threaded GPU implementations.</p>
+<p>There exist algorithms that do less work than <span class="math">\(\Theta(M*N*K)\)</span>, such as <a href="https://en.wikipedia.org/wiki/Strassen_algorithm">Strassen's algorithm</a>, but it deserves its own blog post, so I won't cover it now. Also, Strassen's algorithm can have worse numerical accuracy, so that's another reason to give it the detailed treatment that it deserves in a separate post. There are also other algorithms which has even better complexity than Strassen's algorithm, such as <a href="https://en.wikipedia.org/wiki/Coppersmith%E2%80%93Winograd_algorithm">Coppersmith-Winograd</a>, however these algorithms have gigantic constant factors, that are big enough that the better big-O performance only pays off for big enough problems that they don't fit on modern computers (that is, they are <a href="https://en.wikipedia.org/wiki/Galactic_algorithm">galactic algorithms</a>).</p>
 <p>We also didn't cover distributed, communication-avoiding matrix multiplication algorithms, such as <a href="https://en.wikipedia.org/wiki/Cannon%27s_algorithm">Cannon's algorithm</a>. That would be a topic with enough content for yet another long blog post.</p>
+<p><img alt="Alt Text" src="/images/Matmul.svg"></p>
 <script type="text/javascript">if (!document.getElementById('mathjaxscript_pelican_#%@#$@#')) {
     var align = "center",
         indent = "0em",
@@ -505,28 +415,10 @@ $$</div>
     (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
 }
 </script>
-
-
             
-            
-            
-            <hr/>
         </div>
         <section>
         <div class="span2" style="float:right;font-size:0.9em;">
-            <h4>Published</h4>
-            <time itemprop="dateCreated" datetime="2019-08-05T16:53:00-07:00">Aug 5, 2019</time>
-            <h4>Category</h4>
-            <a class="category-link" href="/categories.html#linear-algebra-ref">linear algebra</a>
-            <h4>Tags</h4>
-            <ul class="list-of-tags tags-in-article">
-                <li><a href="/tags#gemm-ref">GEMM
-                    <span>1</span>
-</a></li>
-                <li><a href="/tags#matmul-ref">matmul
-                    <span>1</span>
-</a></li>
-            </ul>
 <h4>Contact</h4>
     <a href="#" title="My You can add links in your config file Profile" class="sidebar-social-links" target="_blank">
     <i class="fa fa-you can add links in your config file sidebar-social-links"></i></a>
@@ -534,8 +426,8 @@ $$</div>
     <i class="fa fa-another social link sidebar-social-links"></i></a>
         </div>
         </section>
-</div>
-</article>
+    </div>
+    </article>
                     </div>
                     <div class="span1"></div>
                 </div>
