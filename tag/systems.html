@@ -9,15 +9,12 @@
         <meta property="og:type" content="article" />
         <meta name="twitter:card" content="summary">
 
-<meta property="og:title" content="All Categories · Marek Kolodziej&#39;s Blog"/>
-<meta name="twitter:title" content="All Categories · Marek Kolodziej&#39;s Blog">
-<meta property="og:url" content="/categories" />
-<meta property="og:description" content="All categories of the Marek Kolodziej&#39;s Blog blog" />
-<meta name="twitter:description" content="All categories of the Marek Kolodziej&#39;s Blog blog">
+<meta property="og:title" content="Marek Kolodziej&#39;s Blog"/>
+<meta name="twitter:title" content="Marek Kolodziej&#39;s Blog">
+<meta property="og:url" content="" />
 <meta property="og:site_name" content="Marek Kolodziej&#39;s Blog" />
 <meta property="og:article:author" content="Marek Kolodziej" />
-        <title>All Categories · Marek Kolodziej&#39;s Blog
-</title>
+        <title>Marek Kolodziej's Blog - systems tag</title>
         <link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.2/css/bootstrap-combined.min.css" rel="stylesheet">
         <link href="//netdna.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.css" rel="stylesheet">
         <link rel="stylesheet" type="text/css" href="/theme/css/pygments.css" media="screen">
@@ -25,7 +22,6 @@
         <link rel="stylesheet" type="text/css" href="/theme/css/elegant.css" media="screen">
         <link rel="stylesheet" type="text/css" href="/theme/css/admonition.css" media="screen">
         <link rel="stylesheet" type="text/css" href="/theme/css/custom.css" media="screen">
-
 
 
     </head>
@@ -47,7 +43,7 @@
                                        "/"
                                     >Home</a>
                                 </li>
-                                <li  class="active"><a href="/categories">Categories</a></li>
+                                <li ><a href="/categories">Categories</a></li>
                                 <li ><a href="/tags">Tags</a></li>
                                 <li ><a href="/archives">Archives</a></li>
                                 <li><form class="navbar-search" action="/search.html" onsubmit="return validateForm(this.elements['q'].value);"> <input type="text" class="search-query" placeholder="Search" name="q" id="tipue_search_input"></form></li>
@@ -60,37 +56,33 @@
                 <div class="row-fluid">
                     <div class="span1"></div>
                     <div class="span10">
-<div class="row-fluid">
-    <header class="page-header span10 offset2">
-    <h1><a href="/categories">All Categories</a></h1>
-    </header>
-</div>
 
 
 <div class="row-fluid">
-    <div class="span8 offset2">
-        <div class="accordion" id="accordion2">
-            <div class="accordion-group">
-                <div class="accordion-heading">
-                    <a class="accordion-toggle list-of-categories" data-toggle="collapse" data-parent="#accordion2" href="#linear-algebra-ref">
-                        linear algebra<span>1</span>
-                    </a>
+
+    <div class="row-fluid">
+
+    </div>
+
+    <div class="row-fluid">
+        <div class="span8 offset2">
+            <header>
+            <h1 id="recent-posts">Recent Posts <a id="allposts" href="/archives">all posts</a></h1>
+            </header>
+        <div class="recent-posts">
+            <article itemscope>
+                <a href="/matrix-multiplication-on-cpu.html">
+                    Matrix Multiplication on CPU
+                </a>
+                <section>
+                    posted in
+                <a href="/categories#linear-algebra-ref">linear algebra</a>
+                <div class="recent-posts-time">
+                <time itemprop="dateCreated" datetime="2019-08-08T09:50:00-07:00">Thu 08 August 2019</time>
                 </div>
-                <div id="linear-algebra-ref" class="accordion-body collapse">
-                    <div class="accordion-inner">
-                        <ul class="list-articles-category">
-                            <li itemscope>
-                                <time itemprop="dateCreated" datetime="2019-08-08T09:50:00-07:00">
-                                    Thu 08 August 2019
-                                </time>
-                                    <a href="/matrix-multiplication-on-cpu.html">
-                                        Matrix Multiplication on CPU
-                                    </a>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
+                </section>
+            </article>
+        </div>
         </div>
     </div>
 </div>
@@ -116,18 +108,6 @@
                 return (query.length > 0);
             }
         </script>
-
-<script  language="javascript" type="text/javascript">
-    function uncollapse() {
-            $(window.location.hash).collapse({
-                toggle: true
-            })
-    }
-</script>
-
-<script type="text/javascript" language="JavaScript">
-    uncollapse();
-</script>
     </body>
     <!-- Theme: Elegant built for Pelican
         License : MIT -->

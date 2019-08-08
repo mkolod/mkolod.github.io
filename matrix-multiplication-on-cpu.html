@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="english">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="author" content="Marek Kolodziej" />
+
+        <meta property="og:type" content="article" />
+        <meta name="twitter:card" content="summary">
+
+<meta name="keywords" content="matmul, GEMM, performance, systems, linear algebra, " />
+
+<meta property="og:title" content="Matrix Multiplication on CPU "/>
+<meta property="og:url" content="/matrix-multiplication-on-cpu.html" />
+<meta property="og:description" content="Hidden GEMMs: How to optimize matrix multiplication on CPU and GPU TODO: TPU Importance of matrix multiplication Matrix multiplication is a fundamental operation in scientific computing. Here are just a few of countless uses of this fundamental linear algebra operation: compactly notating systems of linear equations solving least squares problems …" />
+<meta property="og:site_name" content="Marek Kolodziej&#39;s Blog" />
+<meta property="og:article:author" content="Marek Kolodziej" />
+<meta property="og:article:published_time" content="2019-08-08T09:50:00-07:00" />
+<meta name="twitter:title" content="Matrix Multiplication on CPU ">
+<meta name="twitter:description" content="Hidden GEMMs: How to optimize matrix multiplication on CPU and GPU TODO: TPU Importance of matrix multiplication Matrix multiplication is a fundamental operation in scientific computing. Here are just a few of countless uses of this fundamental linear algebra operation: compactly notating systems of linear equations solving least squares problems …">
+
+        <title>Matrix Multiplication on CPU  · Marek Kolodziej&#39;s Blog
+</title>
+        <link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.2/css/bootstrap-combined.min.css" rel="stylesheet">
+        <link href="//netdna.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.css" rel="stylesheet">
+        <link rel="stylesheet" type="text/css" href="/theme/css/pygments.css" media="screen">
+        <link rel="stylesheet" type="text/css" href="/theme/tipuesearch/tipuesearch.css" media="screen">
+        <link rel="stylesheet" type="text/css" href="/theme/css/elegant.css" media="screen">
+        <link rel="stylesheet" type="text/css" href="/theme/css/admonition.css" media="screen">
+        <link rel="stylesheet" type="text/css" href="/theme/css/custom.css" media="screen">
+
+
+
+    </head>
+    <body>
+        <div id="content">
+            <div class="navbar navbar-static-top">
+                <div class="navbar-inner">
+                    <div class="container-fluid">
+                        <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                        </a>
+                        <a class="brand" href="/"><span class=site-name>Marek Kolodziej's Blog</span></a>
+                        <div class="nav-collapse collapse">
+                            <ul class="nav pull-right top-menu">
+                                <li >
+                                    <a href=
+                                       "/"
+                                    >Home</a>
+                                </li>
+                                <li ><a href="/categories">Categories</a></li>
+                                <li ><a href="/tags">Tags</a></li>
+                                <li ><a href="/archives">Archives</a></li>
+                                <li><form class="navbar-search" action="/search.html" onsubmit="return validateForm(this.elements['q'].value);"> <input type="text" class="search-query" placeholder="Search" name="q" id="tipue_search_input"></form></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="container-fluid">
+                <div class="row-fluid">
+                    <div class="span1"></div>
+                    <div class="span10">
+<article itemscope>
+<div class="row-fluid">
+    <header class="page-header span10 offset2">
+        <h1>
+            <a href="/matrix-multiplication-on-cpu.html">
+                Matrix Multiplication on CPU
+            </a>
+        </h1>
+    </header>
+</div>
+
+<div class="row-fluid">
+        <div class="span8 offset2 article-content">
+            
+            <h2>Hidden GEMMs: How to optimize matrix multiplication on CPU and GPU</h2>
+<h3>TODO: TPU</h3>
+<h3>Importance of matrix multiplication</h3>
+<p>Matrix multiplication is a fundamental operation in scientific computing. Here are just a few of countless uses of this fundamental linear algebra operation:</p>
+<ul>
+<li><a href="https://en.wikipedia.org/wiki/Matrix_multiplication#System_of_linear_equations">compactly notating</a> systems of linear equations</li>
+<li>solving least squares problems, e.g. linear regression (both the <a href="https://towardsdatascience.com/analytical-solution-of-linear-regression-a0e870b038d5">analytical</a> and the <a href="https://towardsdatascience.com/step-by-step-tutorial-on-linear-regression-with-stochastic-gradient-descent-1d35b088a843">iterative</a> solution)</li>
+<li>characteristic equations in differential equations are based on eigenvalue decomposition</li>
+<li>dimensionality reduction (<a href="https://en.wikipedia.org/wiki/Principal_component_analysis">PCA</a>)</li>
+<li>decompositions such as <a href="https://en.wikipedia.org/wiki/Singular_value_decomposition">SVD</a> (since <span class="math">\(M=U \Sigma V^*\)</span>), which can be used e.g. in topic modeling (<a href="https://en.wikipedia.org/wiki/Latent_semantic_analysis">LSA</a>)</li>
+<li>developing search result ranking algorithms (e.g. <a href="https://en.wikipedia.org/wiki/PageRank#Python">PageRank</a>)</li>
+<li>finding the <a href="https://en.wikipedia.org/wiki/Transitive_closure">transitive closure</a> in graphs</li>
+<li>solving the <a href="http://www.cs.tau.ac.il/~zwick/Adv-Alg-2015/Matrix-Graph-Algorithms.pdf">all-pairs shortest path</a> (APSP) problem</li>
+</ul>
+<p>Since this blog is about machine learning and mostly deep learning, the primary application of interest to the reader will most likely be the implementation of <a href="https://towardsdatascience.com/under-the-hood-of-neural-networks-part-1-fully-connected-5223b7f78528">fully-connected layers</a> in neural networks. At its core, the fully-connected is based on matrix multiplication.</p>
+<p>Convolutions can also be cast as matrix multiplications. For example, a classic approach for this is to preprocess the input using <a href="https://www.mathworks.com/help/images/ref/im2col.html">im2col</a>, do a matrix multiplication, and then apply <a href="https://www.mathworks.com/help/images/ref/col2im.html">col2im</a>. This is very inefficient, because the im2col matrix needs to be generated, and takes up a lot of extra memory. However, this approach can be made efficient using implicit im2col, resulting in an implicit GEMM convolution, which is implemented via some of the cuDNN algorithms. Also, a <span class="math">\(1x1\)</span> convolution <a href="https://datascience.stackexchange.com/questions/12830/how-are-1x1-convolutions-the-same-as-a-fully-connected-layer">can be cast</a> as a matrix multiplication even without im2col.</p>
+<h3>Review of the mathematical operation</h3>
+<p>Before we focus on the code, let's review the basics. If we take a matrix <span class="math">\(A_{MxK}\)</span> with <span class="math">\(M\)</span> rows and <span class="math">\(K\)</span> columns, we can multiply it by matrix <span class="math">\(B_{KxN}\)</span> with <span class="math">\(K\)</span> rows and <span class="math">\(N\)</span> columns, obtaining matrix <span class="math">\(C_{MxN}\)</span> with <span class="math">\(M\)</span> rows and <span class="math">\(N\)</span> columns. To obtain each value <span class="math">\(C_{ij}\)</span>, we calculate a dot product between the <span class="math">\(i\)</span>th row of <span class="math">\(A\)</span> and the <span class="math">\(j\)</span>th column of <span class="math">\(B\)</span>.</p>
+<div class="math">$$
+A = \begin{bmatrix}
+    a_{11} &amp; a_{12} &amp; a_{13} \\
+    a_{21} &amp; a_{22} &amp; a_{23}
+  \end{bmatrix}
+$$</div>
+<div class="math">$$
+B = \begin{bmatrix}
+b_{11} &amp; b_{12} \\
+b_{21} &amp; b_{22} \\
+b_{31} &amp; b_{32}
+\end{bmatrix}
+$$</div>
+<div class="math">$$C = AB = \begin{bmatrix}
+a_{11}*b_{11} + a_{12}*b_{21} + a_{13}*b_{31} &amp; a_{11}*b_{12} + a_{12}*b_{22} + a_{13}*b_{32} \\
+a_{21}*b_{11} + a_{22}*b_{21} + a_{23}*b_{31} &amp; a_{21}*b_{12} + a_{22}*b_{22} + a_{23}*b_{32}
+\end{bmatrix}$$</div>
+<h3>Machine Config</h3>
+<p>For any benchmark, we need to know what hardware and software configuration we're dealing with. The performance reported below was based on the following hardware and software:</p>
+<ul>
+<li>CPU: Intel&reg; Core&trade; i7-7800X @ 3.50 GHz</li>
+<li>RAM: 32 GB DDR4 @ 2.4 GHz (G-Skill Ripjaws F4-2400C15-16GVR)</li>
+<li>Motherboard: ASUS PRIME X299-A motherboard</li>
+<li>OS: Ubuntu 16.04.6 LTS (Xenial Xerus)</li>
+<li>Compiler: GCC 5.4.0 (also others for comparison, if explicitly stated)</li>
+<li>Compiler flags: <code>-O3 -march=native -funroll-loops</code> (unless specified otherwise)</li>
+</ul>
+<h3>Matrix dimensions for our experiments</h3>
+<p>Let's assume that M = N = K = 1024 for simplicity. </p>
+<p>This will let us easily reason about <a href="https://en.wikipedia.org/wiki/Big_O_notation">Big O</a>, or rather, in this case, <a href="https://en.wikipedia.org/wiki/Big_O_notation#Family_of_Bachmann%E2%80%93Landau_notations">Big <span class="math">\(\Theta\)</span></a> (tight bound, rather than the upper bound).</p>
+<h3>Naive Iterative Algorithm</h3>
+<p>Let's try a simple 3-loop iterative algorithm in C++:</p>
+<div class="highlight"><pre><span></span><span class="kt">void</span> <span class="nf">naiveIterativeMatmul</span><span class="p">(</span>
+        <span class="kt">float</span><span class="o">*</span> <span class="k">const</span> <span class="n">A</span><span class="p">,</span>
+        <span class="kt">float</span><span class="o">*</span> <span class="k">const</span> <span class="n">B</span><span class="p">,</span>
+        <span class="kt">float</span><span class="o">*</span> <span class="k">const</span> <span class="n">C</span><span class="p">,</span>
+        <span class="k">const</span> <span class="kt">int</span> <span class="n">M</span><span class="p">,</span>
+        <span class="k">const</span> <span class="kt">int</span> <span class="n">N</span><span class="p">,</span>
+        <span class="k">const</span> <span class="kt">int</span> <span class="n">K</span><span class="p">)</span> <span class="p">{</span>
+
+    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">m</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">m</span> <span class="o">&lt;</span> <span class="n">M</span><span class="p">;</span> <span class="n">m</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">n</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="n">N</span><span class="p">;</span> <span class="n">n</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">k</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">k</span> <span class="o">&lt;</span> <span class="n">K</span><span class="p">;</span> <span class="n">k</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+                <span class="n">C</span><span class="p">[</span><span class="n">m</span> <span class="o">*</span> <span class="n">M</span>  <span class="o">+</span> <span class="n">n</span><span class="p">]</span> <span class="o">+=</span> <span class="n">A</span><span class="p">[</span><span class="n">m</span> <span class="o">*</span> <span class="n">M</span> <span class="o">+</span> <span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="n">B</span><span class="p">[</span><span class="n">k</span> <span class="o">*</span> <span class="n">K</span> <span class="o">+</span> <span class="n">n</span><span class="p">];</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<p>Can we see any problems with the code above? There are plenty. For one, this may be incorrect unless we ensured to <code>memset</code> matrix C to zero. Even assuming that we did so, this code runs extremely slowly. With the good compiler flags (<code>-O3 -march=native</code>, see next section), this implementation took 1,600 ms. With lower optimization levels, performance was even worse. For example, just using <code>-O2</code> without <code>-march=native</code>, I got 1,750 ms; <code>-O1</code> was 2,438 ms; and no flags took 4,501 ms.  </p>
+<h3>The importance of good compiler flags</h3>
+<p>As you saw above, high optimization levels result in a very significant performance improvement. Surely we wouldn't want to compare algorithms if there were plenty of scope for the compiler to further optimize code. On the other hand, <code>-march=native</code> is a bit risky.</p>
+<p>Compiling for a given machine may be a bad assumption - after all, we wish the code to be reasonably portable (e.g. for code to work on both Skylake and Haswell chips). In practice, it's not as bad. For instance, we can build libraries with implementations for different architectures, and load the library compiled for the closest architecture once we know which CPU is used at runtime, e.g. via the use of <a href="https://en.wikipedia.org/wiki/CPUID">CPUID</a> style instructions. This can be done if we generate several shared libraries, for example, and then <code>dlopen</code> the one that matches. For repetitive, long-running code, another option is to just-in-time compile (<a href="https://en.wikipedia.org/wiki/Just-in-time_compilation">JIT</a>) such code, which is the preferred approach for optimizing code since there are added benefits that can be exploited when JITting, such as known dimensions which can be provided to the compiler as literals, rather than runtime values.</p>
+<p>For now, unless stated otherwise, let's assume that we're using <code>-O3 -march=native</code> to have the compiler optimize as much as possible, so we can focus on algorithmic differences.</p>
+<h3>Optimizing the naive iterative algorithm</h3>
+<p>Let's try to improve performance with one line of code, while also addressing the issue of not having <code>memset</code> matrix C. Note that the <code>+=</code> is a problem - we read from RAM and then update. If a matrix is big enough, we'll surely incur some cache misses. Since we only need to update one float at a time, we could instead create a single float, which the compiler would likely put in a register, and update that register instead. This way we should go from 3 reads (A, B and C) and 1 write (C) from RAM to 2 reads and 1 write. Since the register access time is insignificant compared to RAM, we'd expect about 25% of the execution time to go away.</p>
+<div class="highlight"><pre><span></span><span class="kt">void</span> <span class="nf">iterativeMatmulRegisterSum</span><span class="p">(</span>
+        <span class="kt">float</span><span class="o">*</span> <span class="k">const</span> <span class="n">A</span><span class="p">,</span>
+        <span class="kt">float</span><span class="o">*</span> <span class="k">const</span> <span class="n">B</span><span class="p">,</span>
+        <span class="kt">float</span><span class="o">*</span> <span class="k">const</span> <span class="n">C</span><span class="p">,</span>
+        <span class="k">const</span> <span class="kt">int</span> <span class="n">M</span><span class="p">,</span>
+        <span class="k">const</span> <span class="kt">int</span> <span class="n">N</span><span class="p">,</span>
+        <span class="k">const</span> <span class="kt">int</span> <span class="n">K</span><span class="p">)</span> <span class="p">{</span>
+
+    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">m</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">m</span> <span class="o">&lt;</span> <span class="n">M</span><span class="p">;</span> <span class="n">m</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">n</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="n">N</span><span class="p">;</span> <span class="n">n</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+            <span class="kt">float</span> <span class="n">sum</span> <span class="o">=</span> <span class="mf">0.0f</span><span class="p">;</span>
+            <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">k</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">k</span> <span class="o">&lt;</span> <span class="n">K</span><span class="p">;</span> <span class="n">k</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+                <span class="n">sum</span> <span class="o">+=</span> <span class="n">A</span><span class="p">[</span><span class="n">m</span> <span class="o">*</span> <span class="n">M</span> <span class="o">+</span> <span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="n">B</span><span class="p">[</span><span class="n">k</span> <span class="o">*</span> <span class="n">K</span> <span class="o">+</span> <span class="n">n</span><span class="p">];</span>
+            <span class="p">}</span>
+            <span class="n">C</span><span class="p">[</span><span class="n">m</span> <span class="o">*</span> <span class="n">M</span>  <span class="o">+</span> <span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="n">sum</span><span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<p>This implementation took 1,055 ms to execute, which was 65% of the time it took to execute the original. We actually gained more time than we expected! This could be for many reasons, including not polluting the cache with C matrix intermediates, not having to deal with read-write sequencing of RAM (rather than just reading), etc.</p>
+<p>Note though that in a row-major programming language like C/C++, having <span class="math">\(k\)</span> as the innermost loop is a problem. That's because while for matrix <span class="math">\(A\)</span>, <span class="math">\(k\)</span> represents columns, for matrix <span class="math">\(B\)</span>, it represents rows. If these are big matrices, we're likely to incur cache misses on every read from matrix <span class="math">\(B\)</span>! What can we do about this? As we discussed, <span class="math">\(k\)</span> represents columns of matrix <span class="math">\(A\)</span>. On the other hand, <span class="math">\(n\)</span> indexes into the columns of matrix <span class="math">\(B\)</span>. This means that interchanging the middle and inner loops so that we change the <span class="math">\(n\)</span> index the most frequently (columns of B), followed by <span class="math">\(k\)</span> (columns of A, but rows of B), followed by m (rows of <span class="math">\(A\)</span>) will ensure the most cache hits for this basic implementation.</p>
+<div class="highlight"><pre><span></span><span class="kt">void</span> <span class="nf">iterativeMatmulLoopReorder</span><span class="p">(</span>
+        <span class="kt">float</span><span class="o">*</span> <span class="k">const</span> <span class="n">A</span><span class="p">,</span>
+        <span class="kt">float</span><span class="o">*</span> <span class="k">const</span> <span class="n">B</span><span class="p">,</span>
+        <span class="kt">float</span><span class="o">*</span> <span class="k">const</span> <span class="n">C</span><span class="p">,</span>
+        <span class="k">const</span> <span class="kt">int</span> <span class="n">M</span><span class="p">,</span>
+        <span class="k">const</span> <span class="kt">int</span> <span class="n">N</span><span class="p">,</span>
+        <span class="k">const</span> <span class="kt">int</span> <span class="n">K</span><span class="p">)</span> <span class="p">{</span>
+
+    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">m</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">m</span> <span class="o">&lt;</span> <span class="n">M</span><span class="p">;</span> <span class="n">m</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">k</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">k</span> <span class="o">&lt;</span> <span class="n">K</span><span class="p">;</span> <span class="n">k</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">n</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="n">N</span><span class="p">;</span> <span class="n">n</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+                <span class="n">C</span><span class="p">[</span><span class="n">m</span> <span class="o">*</span> <span class="n">M</span>  <span class="o">+</span> <span class="n">n</span><span class="p">]</span> <span class="o">+=</span> <span class="n">A</span><span class="p">[</span><span class="n">m</span> <span class="o">*</span> <span class="n">M</span> <span class="o">+</span> <span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="n">B</span><span class="p">[</span><span class="n">k</span> <span class="o">*</span> <span class="n">K</span> <span class="o">+</span> <span class="n">n</span><span class="p">];</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<p>The above code took only 70 ms! Not surprisingly, hitting the caches matters. This technique is known as loop reordering or <a href="https://en.wikipedia.org/wiki/Loop_interchange">loop interchange</a>.</p>
+<h3>Static dimensions</h3>
+<p>Let's try one more thing. Let's assume that we have the ability to just-in-time compile a function optimal for given matrix dimensions. Say for instance that this is some hidden LSTM state which we expect to use over and over for training or inference, so we can statically determnine the dimensions. Let's see what the impact of statically known dimensions is on performance. To do this, let's template the function:</p>
+<div class="highlight"><pre><span></span><span class="k">template</span> <span class="o">&lt;</span><span class="kt">int</span> <span class="n">M</span><span class="p">,</span> <span class="kt">int</span> <span class="n">N</span><span class="p">,</span> <span class="kt">int</span> <span class="n">K</span><span class="o">&gt;</span>
+<span class="kt">void</span> <span class="n">iterativeMatmulLoopReorderTempl</span><span class="p">(</span>
+        <span class="kt">float</span><span class="o">*</span> <span class="k">const</span> <span class="n">A</span><span class="p">,</span>
+        <span class="kt">float</span><span class="o">*</span> <span class="k">const</span> <span class="n">B</span><span class="p">,</span>
+        <span class="kt">float</span><span class="o">*</span> <span class="k">const</span> <span class="n">C</span><span class="p">)</span> <span class="p">{</span>
+
+    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">m</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">m</span> <span class="o">&lt;</span> <span class="n">M</span><span class="p">;</span> <span class="n">m</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">k</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">k</span> <span class="o">&lt;</span> <span class="n">K</span><span class="p">;</span> <span class="n">k</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">n</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="n">N</span><span class="p">;</span> <span class="n">n</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+                <span class="n">C</span><span class="p">[</span><span class="n">m</span> <span class="o">*</span> <span class="n">M</span>  <span class="o">+</span> <span class="n">n</span><span class="p">]</span> <span class="o">+=</span> <span class="n">A</span><span class="p">[</span><span class="n">m</span> <span class="o">*</span> <span class="n">M</span> <span class="o">+</span> <span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="n">B</span><span class="p">[</span><span class="n">k</span> <span class="o">*</span> <span class="n">K</span> <span class="o">+</span> <span class="n">n</span><span class="p">];</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<p>Since we set <span class="math">\(M\)</span>, <span class="math">\(N\)</span> and <span class="math">\(K\)</span> to equal 1,024, we instantiate the templated function with those values.</p>
+<p>The above code took only 45 ms to execute! I decided to compare this runtime to GNU Octave (version 4.0.0):</p>
+<div class="highlight"><pre><span></span><span class="n">x</span> <span class="p">=</span> <span class="nb">randn</span><span class="p">(</span><span class="mi">1024</span><span class="p">,</span> <span class="mi">1024</span><span class="p">);</span>
+<span class="n">y</span> <span class="p">=</span> <span class="nb">randn</span><span class="p">(</span><span class="mi">1024</span><span class="p">,</span> <span class="mi">1024</span><span class="p">);</span>
+<span class="n">tic</span><span class="p">;</span> <span class="n">x</span><span class="o">*</span><span class="n">y</span><span class="p">;</span> <span class="n">toc</span><span class="p">;</span>
+</pre></div>
+
+
+<p>Octave took 35 ms. This isn't bad, we're close to performance from BLAS itself! Note that I didn't yet do any heavy optimization, such as manual vectorization (e.g. using <a href="https://en.wikipedia.org/wiki/Advanced_Vector_Extensions">AVX</a> <a href="https://en.wikipedia.org/wiki/Intrinsic_function">intrinsics</a> or <a href="https://en.wikipedia.org/wiki/Inline_assembler">inline assembly</a>), tiling, etc. </p>
+<p>While we're at it, let's also check NumPy (from Anaconda, version 1.16.4):</p>
+<div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">time</span>
+
+<span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">1024</span><span class="p">,</span> <span class="mi">1024</span><span class="p">)</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">1024</span><span class="p">,</span> <span class="mi">1024</span><span class="p">)</span>
+
+<span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
+<span class="n">z</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+<span class="k">print</span><span class="p">((</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">)</span>
+</pre></div>
+
+
+<p>Of course, note that it's unreasonable to compare a generic library such as the BLAS libraries used by Octave, NumPy, etc., against a dimension-templated function, which will only work for this particular dimension. Still, even before templating, we went down from 1,600 ms to 70 ms, and to within 2x of Octave's libraries. Note though that if you have a repetitive problem, such as when running deep learning inference, which depends on static matrix sizes, we were close enough to the leading libraries that if we were to beat them, we could have chosen to run a custom function instead. So, for long-running apps that hog data centers, make sure to profile and not take anything for granted.</p>
+<h3>Cache behavior depending on matrix sizes</h3>
+<p>Let's assume <span class="math">\(M\)</span> bytes of cache and <span class="math">\(B\)</span> bytes per cache line, and consequently <span class="math">\(\frac{M}{B}\)</span> cache lines. For matrix dimensions, let's assume Since <span class="math">\(M\)</span>=<span class="math">\(N\)</span>=<span class="math">\(K\)</span>, let's call them all <span class="math">\(N\)</span>.</p>
+<p><em>Case 1</em>: <span class="math">\(N&gt;\)</span><span class="math">\(\frac{M}{B}\)</span></p>
+<p>When we keep going down the rows of matrix <span class="math">\(B\)</span> for a given column (because originally, the inner loop was indexed by <span class="math">\(k\)</span>), then we may incur a cache miss on every iteration over <span class="math">\(B\)</span>. This becomes a problem because even if <span class="math">\(A\)</span> is cached, all computation will stall while fetching data for <span class="math">\(B\)</span>. . Since we have <span class="math">\(\Theta\)</span>(<span class="math">\(N^3\)</span>) multiplications and additions while multiplying the matrix, if we incur a cache miss on every value of <span class="math">\(B\)</span>, our cache misses with be <span class="math">\(Q=\)</span><span class="math">\(\Theta\)</span>(<span class="math">\(n^3\)</span>).</p>
+<p><em>Case 2</em>: <span class="math">\(\sqrt{M}\)</span><span class="math">\(&lt;n&lt;\)</span>c<span class="math">\(\frac{M}{B}\)</span> for <span class="math">\(1&lt;c&lt;0\)</span></p>
+<p>In this case, we'll only have cache misses the matrix being indexed down the rows every elements bytes (the matrix dimension is <span class="math">\(NxN\)</span>, but we're using <span class="math">\(\frac{M}{B}\)</span> bytes per dimension, and <span class="math">\(B&lt;&lt;M\)</span> (tall cache assumption). We will still have cache misses, but only every <span class="math">\(B\)</span> bytes. This means that our cache misses will go down to <span class="math">\(Q=\)</span><span class="math">\(\Theta\)</span>(<span class="math">\(\frac{n^3}{B}\)</span>)</p>
+<p><em>Case 3</em>: <span class="math">\(\sqrt{M}\)</span><span class="math">\(&lt;n\)</span></p>
+<p>In this case, everything fits in cache, since <span class="math">\(n*n\)</span> would be less than <span class="math">\(M\)</span>. Of course, to have both <span class="math">\(A\)</span> and <span class="math">\(B\)</span> matrices in cache, we would have to assume that each of the matrices actually occupies at most half the cache.</p>
+<h3>More on hardware caches</h3>
+<p>We briefly discussed how the naive algorithm had issues with caching, because of the loop order. We also covered the 3 cases of matrix dimensions relative to the cache size. 
+Unfortunately, even loop reordering isn't ideal. For one, even if data is prefetched, we're not breaking up the problem to fit the cache well. A much better way to break up the processing in a way that would fit the cache is via tiling.</p>
+<p>Before we get into tiling, let's review hardware caches.</p>
+<p>First of all, hardware caches are supposed to be fast. These are small chunks of memory that sit on the same chip as the CPU, and use static RAM (SRAM) instead of dynamic RAM (DRAM) like the main memory that we're used to. SRAM uses flip-flops and is much faster than DRAM, which uses capacitors. Unfortunately, SRAM takes up a huge amount of chip real estate, and uses a lot of power, which is why main RAM is dynamic. </p>
+<p>This is typical of any memory hierarchy in a computer, where we have a clear speed-capacity trade-off - registers are fast but tiny, L1 cache is slightly bigger but also a bit slower, DRAM is much larger but slower still, and SSDs have the highest capacity but are slower still. Here are <a href="https://www.prowesscorp.com/computer-latency-at-a-human-scale/">some statistics</a> in CPU clock cycles that show the memory access time depending on the device being accessed.</p>
+<p>Of course, these numbers may vary, they are just here to give you a general idea of the orders of magnitude.</p>
+<table>
+<thead>
+<tr>
+<th>Device</th>
+<th>Access Time (ns)</th>
+<th>CPU cycles</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>register</td>
+<td>0.4</td>
+<td>1</td>
+</tr>
+<tr>
+<td>L1 cache</td>
+<td>0.9</td>
+<td>2.25</td>
+</tr>
+<tr>
+<td>L2 cache</td>
+<td>2.8</td>
+<td>7</td>
+</tr>
+<tr>
+<td>L3 cache</td>
+<td>28</td>
+<td>70</td>
+</tr>
+<tr>
+<td>DRAM</td>
+<td>100</td>
+<td>250</td>
+</tr>
+<tr>
+<td>NVMe SSD</td>
+<td>25,000</td>
+<td>62,500</td>
+</tr>
+<tr>
+<td>SATA SSD</td>
+<td>100,000</td>
+<td>250,000</td>
+</tr>
+</tbody>
+</table>
+<p>Clearly caching matters! If a CPU is sitting idle waiting thousands of cycles for memory access, it's not spending those cycles doing any computation. Needless to say, optimizing cache use will be key to improving performance of our matrix multiplication algorithm.</p>
+<p>Let's cover some basics of computer caches. We won't go into too much detail, so feel to review more at your own leisure <a href="https://en.wikipedia.org/wiki/Cache_(computing)">here</a>. </p>
+<p>Caches aren't exactly ideal in practice. They tend to use heuristics for eviction policies, they aren't fully <a href="https://en.wikipedia.org/wiki/Cache_placement_policies">associative</a>, etc. However, it turns out that practical caches can be assumed to be ideal for practical code analysis to simplify things. An ideal cache has several characteristics:
+- It is fully associative. This means that there exists a single cache set with multiple cache lines, and a given memory block can occupy any of them. If we take a cache line to be of size 1 of some units, this would mean that the cache can be viewed as a matrix with m rows and 1 column.
+- The cache has an omniscient residency/eviction policy. This assumes a perfect policy not just accounting for the past, but also the future, anticipating what may be needed next.</p>
+<p>It turns out that while such assumptions are unreasonable, they can approximate a practical cache relatively well. The least-recently used assumption can replace the assumption of omniscience. Sleator and Tarjan (1985) <a href="https://www.cs.cmu.edu/~sleator/papers/amortized-efficiency.pdf">demonstrated</a> that given an omniscient cache with M bytes and Q cache misses, it can be replaced with a cache with an LRU cache with 2M bytes and 2Q cache misses. Therefore, the omniscience assumption can be approximated by a real, practical cache up to a small, known constant factor. The full associativity assumption is also true up to a point, e.g. L1 caches in recent Intel Core i7 CPUs are 8-way set associative, etc.</p>
+<p>We also need to make a "tall cache" assumption, which means that the number of bytes per cache line is much less than the number of cache lines. Formally, if a cache line has B bytes and the cache has M bytes total (giving us <span class="math">\(\frac{M}{B}\)</span> cache lines), we assume that <span class="math">\(B^2 &lt; c*M\)</span> for <span class="math">\(c \le 1\)</span>.</p>
+<p>This is also a reasonable assumption for practical caches. For example, on a Core i7-8700K, there's an L1 cache of 32 KB per core, and each cache line is 64 bytes. In this case, <span class="math">\(B^2=4,096\)</span>, which is 4KB, which is much less than 32 KB.</p>
+<p>Why do we need to make a tall cache assumption? Essentially, this is because we need to be able to have multiple smaller items that are able to be stored in the cache, rather than fetching one gigantic item when we store. For instance, let's imagine that we had a single cache line of 32 KB, and we wanted to read a matrix down a row. A single read that resulted in a cache miss would result in storing contiguous 32 KB of memory in the cache, but we only needed one element per row, so the other elements for that row would be polluting the cache. Ideally, we'd want the cache line to be small, since then we could store small chunks from various locations in memory. However, the cache line has to be big enough to make contiguous reads efficient, by filling up the memory bus when the read is done. We will see more of that in the case of GPUs.</p>
+<p>Given all the above, let's assume either an omniscient or LRU cache, as convenient, that is fully or nearly fully associative, with a tall cache assumption. The cache has <span class="math">\(M\)</span> bytes total and <span class="math">\(B\)</span> bytes per cache line, which means that it has <span class="math">\(\frac{M}{B}\)</span> cache lines.</p>
+<h3>Iterative Algorithm with Tiling</h3>
+<p>Let's break our large matrix into sub-matrices or tiles. If these tiles are small enough to fit in the cache (say L1), then we shouldn't have to care whether the loops are reordered or not. Of course, since each <span class="math">\(x,y\)</span> coordinate in the output matrix <span class="math">\(C\)</span> has to be the result of multiplying an entire row vector <span class="math">\(i\)</span> from matrix <span class="math">\(A\)</span> by the entire column vector <span class="math">\(j\)</span> of matrix <span class="math">\(B\)</span>, taking small square tiles out of the matrix from both matrices will only give us partial results for each output coordinate, so we'll have to sum up the products coming out of multiplying individual tiles. For example, to calculate the blue tile in matrix <span class="math">\(C\)</span> in the figure below, we'll need to take two partial results from tile multiplications.</p>
+<p><img alt="Tiling Diagram" src="./images/Matmul.svg"></p>
+<p>Remember that we'll need to tune the implementation to our actual CPU. I have an Intel&reg; Core&trade; i7-7800X. We can Google around and <a href="http://www.cpu-world.com/CPUs/Core_i7/Intel-Core%20i7%20i7-7800X.html">find</a> the following details about that CPU:</p>
+<ul>
+<li>L1 cache: 32 KB / core</li>
+<li>L2 cache: 1 MB / core</li>
+<li>L3 cache: 8.25 MB shared cache</li>
+</ul>
+<p>Let's check out the following code:</p>
+<div class="highlight"><pre><span></span><span class="k">template</span> <span class="o">&lt;</span><span class="kt">int</span> <span class="n">T</span><span class="o">&gt;</span>
+<span class="kt">void</span> <span class="n">naiveIterativeMatmulTiled</span><span class="p">(</span>
+        <span class="kt">float</span><span class="o">*</span> <span class="k">const</span> <span class="n">A</span><span class="p">,</span>
+        <span class="kt">float</span><span class="o">*</span> <span class="k">const</span> <span class="n">B</span><span class="p">,</span>
+        <span class="kt">float</span><span class="o">*</span> <span class="k">const</span> <span class="n">C</span><span class="p">,</span>
+        <span class="k">const</span> <span class="kt">int</span> <span class="n">M</span><span class="p">,</span>
+        <span class="k">const</span> <span class="kt">int</span> <span class="n">N</span><span class="p">,</span>
+        <span class="k">const</span> <span class="kt">int</span> <span class="n">K</span><span class="p">)</span> <span class="p">{</span>
+
+    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">m</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">m</span> <span class="o">&lt;</span> <span class="n">M</span><span class="o">/</span><span class="n">T</span><span class="p">;</span> <span class="n">m</span> <span class="o">+=</span> <span class="n">T</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">n</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="n">N</span><span class="p">;</span> <span class="n">n</span> <span class="o">+=</span> <span class="n">T</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">k</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">k</span> <span class="o">&lt;</span> <span class="n">K</span><span class="p">;</span> <span class="n">k</span> <span class="o">+=</span> <span class="n">T</span><span class="p">)</span> <span class="p">{</span>
+                <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">mt</span> <span class="o">=</span> <span class="n">m</span><span class="p">;</span> <span class="n">mt</span> <span class="o">&lt;</span> <span class="n">m</span> <span class="o">+</span> <span class="n">T</span> <span class="o">&amp;&amp;</span> <span class="n">mt</span> <span class="o">&lt;</span> <span class="n">M</span><span class="p">;</span> <span class="n">mt</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+                    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">nt</span> <span class="o">=</span> <span class="n">n</span><span class="p">;</span> <span class="n">nt</span> <span class="o">&lt;</span> <span class="n">n</span> <span class="o">+</span> <span class="n">T</span> <span class="o">&amp;&amp;</span> <span class="n">nt</span> <span class="o">&lt;</span> <span class="n">N</span><span class="p">;</span> <span class="n">nt</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+                        <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">kt</span> <span class="o">=</span> <span class="n">k</span><span class="p">;</span> <span class="n">kt</span> <span class="o">&lt;</span> <span class="n">k</span> <span class="o">+</span> <span class="n">T</span> <span class="o">&amp;&amp;</span> <span class="n">kt</span> <span class="o">&lt;</span> <span class="n">K</span><span class="p">;</span> <span class="n">kt</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+                            <span class="n">C</span><span class="p">[</span><span class="n">mt</span> <span class="o">*</span> <span class="n">M</span> <span class="o">+</span> <span class="n">nt</span><span class="p">]</span> <span class="o">+=</span> <span class="n">A</span><span class="p">[</span><span class="n">mt</span> <span class="o">*</span> <span class="n">M</span> <span class="o">+</span> <span class="n">kt</span><span class="p">]</span> <span class="o">*</span> <span class="n">B</span><span class="p">[</span><span class="n">kt</span> <span class="o">*</span> <span class="n">K</span> <span class="o">+</span> <span class="n">nt</span><span class="p">];</span>
+                        <span class="p">}</span>
+                    <span class="p">}</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<p>Note that now, we don't need to reorder the loops, since cache hits will be ensured by the small size of the tiles in the inner loops.</p>
+<p>The above kernel combines the flexibility of runtime dimensions for <span class="math">\(M\)</span>, <span class="math">\(N\)</span> and <span class="math">\(K\)</span>, while compiling for a fixed tile size. Thus, the compiler can make some static optimizations for a fixed <span class="math">\(T\)</span>, while not requiring recompilation as matrix dimensions change. This way, one can look up the best tile size for a given CPU and run that particular kernel.</p>
+<p>The above code leaves room for improvement, since we keep recomputing the inner loop boundaries every time. Let's refactor the boundary conditions as follows:</p>
+<div class="highlight"><pre><span></span><span class="k">template</span> <span class="o">&lt;</span><span class="kt">int</span> <span class="n">T</span><span class="o">&gt;</span>
+<span class="kt">void</span> <span class="n">naiveIterativeMatmulTiled</span><span class="p">(</span>
+        <span class="kt">float</span><span class="o">*</span> <span class="k">const</span> <span class="n">A</span><span class="p">,</span>
+        <span class="kt">float</span><span class="o">*</span> <span class="k">const</span> <span class="n">B</span><span class="p">,</span>
+        <span class="kt">float</span><span class="o">*</span> <span class="k">const</span> <span class="n">C</span><span class="p">,</span>
+        <span class="k">const</span> <span class="kt">int</span> <span class="n">M</span><span class="p">,</span>
+        <span class="k">const</span> <span class="kt">int</span> <span class="n">N</span><span class="p">,</span>
+        <span class="k">const</span> <span class="kt">int</span> <span class="n">K</span><span class="p">)</span> <span class="p">{</span>
+
+    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">m</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">m</span> <span class="o">&lt;</span> <span class="n">M</span><span class="p">;</span> <span class="n">m</span> <span class="o">+=</span> <span class="n">T</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">n</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="n">N</span><span class="p">;</span> <span class="n">n</span> <span class="o">+=</span> <span class="n">T</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">k</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">k</span> <span class="o">&lt;</span> <span class="n">K</span><span class="p">;</span> <span class="n">k</span> <span class="o">+=</span> <span class="n">T</span><span class="p">)</span> <span class="p">{</span>
+
+                <span class="k">const</span> <span class="kt">int</span> <span class="n">minMt</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">min</span><span class="p">(</span><span class="n">m</span> <span class="o">+</span> <span class="n">T</span><span class="p">,</span> <span class="n">M</span><span class="p">);</span>
+                <span class="k">const</span> <span class="kt">int</span> <span class="n">minNt</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">min</span><span class="p">(</span><span class="n">n</span> <span class="o">+</span> <span class="n">T</span><span class="p">,</span> <span class="n">N</span><span class="p">);</span>
+                <span class="k">const</span> <span class="kt">int</span> <span class="n">minKt</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">min</span><span class="p">(</span><span class="n">k</span> <span class="o">+</span> <span class="n">T</span><span class="p">,</span> <span class="n">K</span><span class="p">);</span>
+
+                <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">mt</span> <span class="o">=</span> <span class="n">m</span><span class="p">;</span> <span class="n">mt</span> <span class="o">&lt;</span> <span class="n">minMt</span><span class="p">;</span> <span class="n">mt</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+                    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">nt</span> <span class="o">=</span> <span class="n">n</span><span class="p">;</span> <span class="n">nt</span> <span class="o">&lt;</span> <span class="n">minNt</span><span class="p">;</span> <span class="n">nt</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+                        <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">kt</span> <span class="o">=</span> <span class="n">k</span><span class="p">;</span> <span class="n">kt</span> <span class="o">&lt;</span> <span class="n">minKt</span><span class="p">;</span> <span class="n">kt</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+
+                            <span class="n">C</span><span class="p">[</span><span class="n">mt</span> <span class="o">*</span> <span class="n">M</span> <span class="o">+</span> <span class="n">nt</span><span class="p">]</span> <span class="o">+=</span> <span class="n">A</span><span class="p">[</span><span class="n">mt</span> <span class="o">*</span> <span class="n">M</span> <span class="o">+</span> <span class="n">kt</span><span class="p">]</span> <span class="o">*</span> <span class="n">B</span><span class="p">[</span><span class="n">kt</span> <span class="o">*</span> <span class="n">K</span> <span class="o">+</span> <span class="n">nt</span><span class="p">];</span>
+                        <span class="p">}</span>
+                    <span class="p">}</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<p>The tile size indicated by the previous cache discussion, for optimal hits of L1, is <span class="math">\(\sqrt(32*1024)<div class="math">$$\approx$$</div>181\)</span>. Note though that this only lets us fit one of the matrices in cache, but we need to fit at least A and B. Thus, let's set the tile size to 64. Executing this took 694 ms. What went wrong? It turns out that the optimal tile size may be wrong if the caches can get evicted by other applications running in the background (see next section). After tuning the tile size, I found that for the CPU in question, the best tile size ended up being 16. Even then, execution took 470 ms. It looks like our tiled solution isn't nearly as good as the textbooks on performance engineering say it should be.</p>
+<h3>Problems tiling on the CPU</h3>
+<p>Tiling is not cache-agnostic. This means that if we pick a tile size that's optimal for a CPU with a given cache size and then end up running the same code on a CPU with a smaller cache size (assuming the same instruction set), the performance on the CPU with the smaller cache might end up abysmal. Note that we might essentially end up with the case of the <span class="math">\(\Theta\)</span>(<span class="math">\(n^3\)</span>) cache misses. The other headache is that the number of unique implementations would need to be dependent on all cache hierarchies. The tiling discussion above is based on one level of caching, but modern CPUs have 3 levels (L1, L2, L3). This means we might need to add extra loops to cover tiles for L2, not just L1, and do the same for L3.</p>
+<p>Another major concern with cache size-tuned algorithms is that they make the assumption that nothing else can run on the CPU at any given time. This might be an appropriate assumption to make if we were using a microcontroller, but on any platform with a running operating system, it's unrealistic. Even if the CPU does not need to run any other processes in the background, the kernel itself needs to context switch between OS housekeeping tasks (say interrupt servicing) and running the application. The context switch between the kernel and the application can result in purging caches to make room for the task being done by the kernel. The problem is obviously worse if the kernel needs to context switch not just between itself and our matrix multiplying application, but other <a href="https://en.wikipedia.org/wiki/User_space">userspace</a> applications. This for instance is a serious concern if we try to load up the cache with a lot of data at once, since it may be evicted due to a context switch.</p>
+<p>Overall, the fact that tiling is not cache-agnostic, the effect of context switches on cache evictions, and the abysmal practical performance seem to indicate so far that loop reordering is the preferred way to go.</p>
+<h3>Compiler considerations</h3>
+<p>I had a gut feeling that perhaps the compiler wasn't doing a good job with tiled code, so I decided to try newer versions of GCC. Unfortunately, they ended up being worse, particularly GCC 8. This is likely due to the compiler patches introduced to combat <a href="https://en.wikipedia.org/wiki/Spectre_(security_vulnerability)">Spectre</a>-based attacks. However, I decided to check other compilers available as default packages for my OS (Ubuntu 16.04.6 LTS). Of course, Clang is an alternative to GCC. </p>
+<p>Let's compare the results:</p>
+<p><strong>GCC 5.4.0</strong></p>
+<ul>
+<li>Loop unrolling (non-templated <span class="math">\(MNK\)</span>): 70 ms</li>
+<li>Loop unrolling (templated <span class="math">\(MNK\)</span>): 40 ms</li>
+<li>Tiling (best tile size=16): 470 ms</li>
+</ul>
+<p><strong>Clang 3.8.0</strong></p>
+<ul>
+<li>Loop unrolling (non-templated <span class="math">\(MNK\)</span>): 70 ms</li>
+<li>Loop unrolling (templated <span class="math">\(MNK\)</span>): 70 ms</li>
+<li>Tiling (best tile size=16): 80 ms</li>
+</ul>
+<p>All compilations were done with the same compiler flage (<code>-O3 -march=native -funroll-loops</code>).</p>
+<p>These results are stunning! The biggest difference of course is how drastically different the performance of tiled code is. Note that I've seen this by comparing other compilers, so it's not a fluke. In general, the performance gain of simple loop reordering is very stable, while the gains from tiling have extremely large variation. The lesson here is: don't believe textbooks, measure performance for everything you do. Or, as the Cold War saying goes: "<a href="https://en.wikipedia.org/wiki/Trust,_but_verify">trust, but verify</a>." </p>
+<p>Yet again, loop reordering seems to win over tiling. Note though that tiling is a good strategy for processors where we usually don't expect other concurrent workloads, such as GPUs - if we expect to fill up the GPU with a matrix multiplication kernel, many of the concerns raised here go away. Also, one can think of tiling in the context of divide-and-conquer (see below), where sequential processing of the tile is the base case of that algorithm.</p>
+<h3>Divide-and-conquer algorithm</h3>
+<p>The divide-and-conquer algorithm is cache-agnostic, in that it doesn't depend on the tile size. Since it's based on the <a href="https://en.wikipedia.org/wiki/Fork%E2%80%93join_model">fork-join</a> paradigm, it can also be implemented in a way that exploits multi-core processing. </p>
+<p>Here's a mathematical representation of this concept. Let's divide both matrices into 4 <a href="https://en.wikipedia.org/wiki/Block_matrix">submatrices</a>, i.e. partitioning vertically and horizontally.</p>
+<div class="math">$$
+A = \begin{bmatrix}
+    A_{11} &amp; A_{12} \\
+    A_{21} &amp; A_{22}
+  \end{bmatrix}
+$$</div>
+<div class="math">$$
+B = \begin{bmatrix}
+    B_{11} &amp; B_{12} \\
+    B_{21} &amp; B_{22}
+  \end{bmatrix}
+$$</div>
+<div class="math">$$
+C = \begin{bmatrix}
+A_{11}B_{11} + A_{12}B_{21} &amp; A_{11}B_{12} + A_{12}B_{22} \\
+A_{21}B_{11} + A_{22}B_{21} &amp; A_{21}B_{12} + A_{22}B_{22}
+\end{bmatrix}
+$$</div>
+<p>We can of course break up these matrices recursively and stop at the base case of having to multiply two elements together. Of course, the performance of an algorithm with a trivial base case would be horrendous, since the overhead of function calls would overshadow any data fetches and compute. However, if you think about it, a larger base case essentially ends up behaving like a tile, so the promise of being cache-agnostic is false if we have real performance considerations. That said, divide and conquer lets us at least use multiple cores, so we can combine that with a tile-based base case and multi-core processing to further improve performance. For now, let's write down the algorithm.</p>
+<p><strong>TODO: Write down the algorithm for Divide and Conquer.</strong></p>
+<p><strong>TODO: Write about non-square matrices and cache behavior for Divide and Conquer</strong></p>
+<p><strong>TODO: Implement divide and conquer with loop reordering to show gains from multi-core on large matrices.</strong></p>
+<h3>What we didn't cover</h3>
+<p>We clearly didn't cover vector processing on the CPU in detail, using instruction sets such as <a href="https://en.wikipedia.org/wiki/Advanced_Vector_Extensions">AVX</a> on x86 and <a href="https://en.wikipedia.org/wiki/ARM_architecture#Advanced_SIMD_(NEON)">NEON</a> on ARM. These will be covered in separate blog posts. Fortunately, in practice, using <code>-O3 -march=native</code> tends to benefit from some vectorization generated by the compiler, although usually it's not nearly good enough unless we know all dimensions statically. Hand-written assembly code would tend to do better, but that's a topic for another blog post.</p>
+<p>Also, there exist algorithms that do less work than <span class="math">\(\Theta(M*N*K)\)</span>, such as <a href="https://en.wikipedia.org/wiki/Strassen_algorithm">Strassen's algorithm</a>, but it deserves its own blog post, so I won't cover it now. Also, Strassen's algorithm can have worse numerical accuracy, so that's another reason to give it the detailed treatment that it deserves in a separate post. There are also other algorithms which has even better complexity than Strassen's algorithm, such as <a href="https://en.wikipedia.org/wiki/Coppersmith%E2%80%93Winograd_algorithm">Coppersmith-Winograd</a>, however these algorithms have gigantic constant factors, that are big enough that the better big-O performance only pays off for big enough problems that they don't fit on modern computers (that is, they are <a href="https://en.wikipedia.org/wiki/Galactic_algorithm">galactic algorithms</a>).</p>
+<p>We also didn't cover distributed, communication-avoiding matrix multiplication algorithms, such as <a href="https://en.wikipedia.org/wiki/Cannon%27s_algorithm">Cannon's algorithm</a>. That would be a topic with enough content for yet another long blog post.</p>
+<script type="text/javascript">if (!document.getElementById('mathjaxscript_pelican_#%@#$@#')) {
+    var align = "center",
+        indent = "0em",
+        linebreak = "false";
+
+    if (false) {
+        align = (screen.width < 768) ? "left" : align;
+        indent = (screen.width < 768) ? "0em" : indent;
+        linebreak = (screen.width < 768) ? 'true' : linebreak;
+    }
+
+    var mathjaxscript = document.createElement('script');
+    mathjaxscript.id = 'mathjaxscript_pelican_#%@#$@#';
+    mathjaxscript.type = 'text/javascript';
+    mathjaxscript.src = 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.3/latest.js?config=TeX-AMS-MML_HTMLorMML';
+
+    var configscript = document.createElement('script');
+    configscript.type = 'text/x-mathjax-config';
+    configscript[(window.opera ? "innerHTML" : "text")] =
+        "MathJax.Hub.Config({" +
+        "    config: ['MMLorHTML.js']," +
+        "    TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'none' } }," +
+        "    jax: ['input/TeX','input/MathML','output/HTML-CSS']," +
+        "    extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']," +
+        "    displayAlign: '"+ align +"'," +
+        "    displayIndent: '"+ indent +"'," +
+        "    showMathMenu: true," +
+        "    messageStyle: 'normal'," +
+        "    tex2jax: { " +
+        "        inlineMath: [ ['\\\\(','\\\\)'] ], " +
+        "        displayMath: [ ['$$','$$'] ]," +
+        "        processEscapes: true," +
+        "        preview: 'TeX'," +
+        "    }, " +
+        "    'HTML-CSS': { " +
+        "        availableFonts: ['STIX', 'TeX']," +
+        "        preferredFont: 'STIX'," +
+        "        styles: { '.MathJax_Display, .MathJax .mo, .MathJax .mi, .MathJax .mn': {color: 'inherit ! important'} }," +
+        "        linebreaks: { automatic: "+ linebreak +", width: '90% container' }," +
+        "    }, " +
+        "}); " +
+        "if ('default' !== 'default') {" +
+            "MathJax.Hub.Register.StartupHook('HTML-CSS Jax Ready',function () {" +
+                "var VARIANT = MathJax.OutputJax['HTML-CSS'].FONTDATA.VARIANT;" +
+                "VARIANT['normal'].fonts.unshift('MathJax_default');" +
+                "VARIANT['bold'].fonts.unshift('MathJax_default-bold');" +
+                "VARIANT['italic'].fonts.unshift('MathJax_default-italic');" +
+                "VARIANT['-tex-mathit'].fonts.unshift('MathJax_default-italic');" +
+            "});" +
+            "MathJax.Hub.Register.StartupHook('SVG Jax Ready',function () {" +
+                "var VARIANT = MathJax.OutputJax.SVG.FONTDATA.VARIANT;" +
+                "VARIANT['normal'].fonts.unshift('MathJax_default');" +
+                "VARIANT['bold'].fonts.unshift('MathJax_default-bold');" +
+                "VARIANT['italic'].fonts.unshift('MathJax_default-italic');" +
+                "VARIANT['-tex-mathit'].fonts.unshift('MathJax_default-italic');" +
+            "});" +
+        "}";
+
+    (document.body || document.getElementsByTagName('head')[0]).appendChild(configscript);
+    (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
+}
+</script>
+
+
+            
+            
+            
+            <hr/>
+        </div>
+        <section>
+        <div class="span2" style="float:right;font-size:0.9em;">
+            <h4>Published</h4>
+            <time itemprop="dateCreated" datetime="2019-08-08T09:50:00-07:00">Aug 8, 2019</time>
+            <h4>Category</h4>
+            <a class="category-link" href="/categories.html#linear-algebra-ref">linear algebra</a>
+            <h4>Tags</h4>
+            <ul class="list-of-tags tags-in-article">
+                <li><a href="/tags#gemm-ref">GEMM
+                    <span>1</span>
+</a></li>
+                <li><a href="/tags#matmul-ref">matmul
+                    <span>1</span>
+</a></li>
+                <li><a href="/tags#performance-ref">performance
+                    <span>1</span>
+</a></li>
+                <li><a href="/tags#systems-ref">systems
+                    <span>1</span>
+</a></li>
+            </ul>
+<h4>Contact</h4>
+    <a href="#" title="My You can add links in your config file Profile" class="sidebar-social-links" target="_blank">
+    <i class="fa fa-you can add links in your config file sidebar-social-links"></i></a>
+    <a href="#" title="My Another social link Profile" class="sidebar-social-links" target="_blank">
+    <i class="fa fa-another social link sidebar-social-links"></i></a>
+        </div>
+        </section>
+</div>
+</article>
+                    </div>
+                    <div class="span1"></div>
+                </div>
+            </div>
+        </div>
+<footer>
+
+
+
+
+    <div id="fpowered">
+        Powered by: <a href="http://getpelican.com/" title="Pelican Home Page" target="_blank" rel="nofollow">Pelican</a>
+        Theme: <a href="https://elegant.oncrashreboot.com/" title="Theme Elegant Home Page" target="_blank" rel="nofollow">Elegant</a>
+    </div>
+</footer>            <script src="//code.jquery.com/jquery.min.js"></script>
+        <script src="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.2/js/bootstrap.min.js"></script>
+        <script>
+            function validateForm(query)
+            {
+                return (query.length > 0);
+            }
+        </script>
+
+    
+    </body>
+    <!-- Theme: Elegant built for Pelican
+        License : MIT -->
+</html>
