@@ -313,20 +313,6 @@ Unfortunately, even loop reordering isn't ideal. For one, even if data is prefet
 <h3>Iterative Algorithm with Tiling</h3>
 <p>Let's break our large matrix into sub-matrices or tiles. If these tiles are small enough to fit in the cache (say L1), then we shouldn't have to care whether the loops are reordered or not. Of course, since each <span class="math">\(x,y\)</span> coordinate in the output matrix <span class="math">\(C\)</span> has to be the result of multiplying an entire row vector <span class="math">\(i\)</span> from matrix <span class="math">\(A\)</span> by the entire column vector <span class="math">\(j\)</span> of matrix <span class="math">\(B\)</span>, taking small square tiles out of the matrix from both matrices will only give us partial results for each output coordinate, so we'll have to sum up the products coming out of multiplying individual tiles. For example, to calculate the blue tile in matrix <span class="math">\(C\)</span> in the figure below, we'll need to take two partial results from tile multiplications.</p>
 <p><img alt="Tiling Diagram" src="./images/Matmul.svg"></p>
-<p>License: CC-BY</p>
-<p>Pages 10
-Find a Page…
-Home
-Compatibility
-Development Notes
-Markdown Cheatsheet
-Markdown Here Cheatsheet
-Other Markdown Tools
-Press, Posts, Reviews, Etc.
-Reviews
-Tips and Tricks
-Troubleshooting
-Clone this wiki locally</p>
 <p>Remember that we'll need to tune the implementation to our actual CPU. I have an Intel&reg; Core&trade; i7-7800X. We can Google around and <a href="http://www.cpu-world.com/CPUs/Core_i7/Intel-Core%20i7%20i7-7800X.html">find</a> the following details about that CPU:</p>
 <ul>
 <li>L1 cache: 32 KB / core</li>
