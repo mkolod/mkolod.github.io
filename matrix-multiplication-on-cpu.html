@@ -426,20 +426,26 @@ A_{21}B_{11} + A_{22}B_{21} &amp; A_{21}B_{12} + A_{22}B_{22}
 $$</div>
 <p>We can of course break up these matrices recursively and stop at the base case of having to multiply two elements together. Of course, the performance of an algorithm with a trivial base case would be horrendous, since the overhead of function calls would overshadow any data fetches and compute. However, if you think about it, a larger base case essentially ends up behaving like a tile, so the promise of being cache-agnostic is false if we have real performance considerations. That said, divide and conquer lets us at least use multiple cores, so we can combine that with a tile-based base case and multi-core processing to further improve performance. For now, let's write down the algorithm.</p>
 <ol>
-<li>Partition the matrices</li>
+<li>Partition the matrices<ul>
 <li>partition <span class="math">\(A\)</span> into <span class="math">\(A_{11}\)</span>, <span class="math">\(A_{12}\)</span>, <span class="math">\(A_{21}\)</span>, <span class="math">\(A_{22}\)</span></li>
 <li>partition <span class="math">\(B\)</span> into <span class="math">\(B_{11}\)</span>, <span class="math">\(B_{12}\)</span>, <span class="math">\(B_{21}\)</span>, <span class="math">\(B_{22}\)</span></li>
 <li>partition <span class="math">\(C\)</span> into <span class="math">\(C_{11}\)</span>, <span class="math">\(C_{12}\)</span>, <span class="math">\(C_{21}\)</span>, <span class="math">\(C_{22}\)</span></li>
-<li>Fork the work:</li>
+</ul>
+</li>
+<li>Fork the work:<ul>
 <li>fork task 1: <span class="math">\(C_{11}\)</span> += <span class="math">\(A_{11}\)</span>*<span class="math">\(B_{11}\)</span></li>
 <li>fork task 2: <span class="math">\(C_{12}\)</span> += <span class="math">\(A_{11}\)</span>*<span class="math">\(B_{12}\)</span></li>
 <li>fork task 3: <span class="math">\(C_{21}\)</span> += <span class="math">\(A_{21}\)</span>*<span class="math">\(B_{11}\)</span></li>
 <li>fork task 4: <span class="math">\(C_{21}\)</span> += <span class="math">\(A_{21}\)</span>*<span class="math">\(B_{12}\)</span></li>
-<li>Wait for dependent tasks and launch new ones:</li>
+</ul>
+</li>
+<li>Wait for dependent tasks and launch new ones:<ul>
 <li>wait for task 1; fork task 5: <span class="math">\(C_{11}\)</span> += <span class="math">\(A_{12}\)</span>*<span class="math">\(B_{21}\)</span></li>
 <li>wait for task 2; fork task 6: <span class="math">\(C_{12}\)</span> += <span class="math">\(A_{12}\)</span>*<span class="math">\(B_{22}\)</span></li>
 <li>wait for task 3; fork task 7: <span class="math">\(C_{21}\)</span> += <span class="math">\(A_{22}\)</span>*<span class="math">\(B_{21}\)</span></li>
 <li>wait for task 4; fork task 8: <span class="math">\(C_{22}\)</span> += <span class="math">\(A_{22}\)</span>*<span class="math">\(B_{22}\)</span></li>
+</ul>
+</li>
 <li>Wait for tasks 5-8 to complete.</li>
 </ol>
 <p>Note that there's some serialization here - tasks 5-8 need to wait for tasks 1-4 to complete, e.g. task 5 needs to wait for task 1 to complete. We chose this because it ensures that the fork-join approach doesn't use any extra memory. If instead we used scratch space for tasks 5-8 and had no write-write conflicts, we could have launched all 8 tasks at the same time, and then we could do elementwise addition of the output of task 5 with the output of task 1 and so on. Since elementwise addition is <span class="math">\(\Theta\)</span>(<span class="math">\(N^2\)</span>) time while matrix multiplication is <span class="math">\(\Theta\)</span>(<span class="math">\(N^3\)</span>) time, we would have gained further acceleration, at the cost of using extra memory. We could also use no additional memory, at the cost of making all memory writes atomic, which doesn't buy us much relative to the first scenario of 2 batches of tasks, since it serializes memory access.</p>
