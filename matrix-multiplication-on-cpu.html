@@ -425,7 +425,24 @@ A_{21}B_{11} + A_{22}B_{21} &amp; A_{21}B_{12} + A_{22}B_{22}
 \end{bmatrix}
 $$</div>
 <p>We can of course break up these matrices recursively and stop at the base case of having to multiply two elements together. Of course, the performance of an algorithm with a trivial base case would be horrendous, since the overhead of function calls would overshadow any data fetches and compute. However, if you think about it, a larger base case essentially ends up behaving like a tile, so the promise of being cache-agnostic is false if we have real performance considerations. That said, divide and conquer lets us at least use multiple cores, so we can combine that with a tile-based base case and multi-core processing to further improve performance. For now, let's write down the algorithm.</p>
-<p><strong>TODO: Write down the algorithm for Divide and Conquer.</strong></p>
+<ol>
+<li>Partition the matrices</li>
+<li>partition <span class="math">\(A\)</span> into <span class="math">\(A_{11}\)</span>, <span class="math">\(A_{12}\)</span>, <span class="math">\(A_{21}\)</span>, <span class="math">\(A_{22}\)</span></li>
+<li>partition <span class="math">\(B\)</span> into <span class="math">\(B_{11}\)</span>, <span class="math">\(B_{12}\)</span>, <span class="math">\(B_{21}\)</span>, <span class="math">\(B_{22}\)</span></li>
+<li>partition <span class="math">\(C\)</span> into <span class="math">\(C_{11}\)</span>, <span class="math">\(C_{12}\)</span>, <span class="math">\(C_{21}\)</span>, <span class="math">\(C_{22}\)</span></li>
+<li>Fork the work:</li>
+<li>fork task 1: <span class="math">\(C_{11}\)</span> += A_{11}*B_{11}</li>
+<li>fork task 2: <span class="math">\(C_{12}\)</span> += A_{11}*B_{12}</li>
+<li>fork task 3: <span class="math">\(C_{21}\)</span> += A_{21}*B_{11}</li>
+<li>fork task 4: <span class="math">\(C_{21}\)</span> += A_{21}*B_{12}</li>
+<li>Wait for dependent tasks and launch new ones:</li>
+<li>wait for task 1; fork task 5: <span class="math">\(C_{11}\)</span> += A_{12}*B_{21}</li>
+<li>wait for task 2; fork task 6: <span class="math">\(C_{12}\)</span> += A_{12}*B_{22}</li>
+<li>wait for task 3; fork task 7: <span class="math">\(C_{21}\)</span> += A_{22}*B_{21}</li>
+<li>wait for task 4; fork task 8: <span class="math">\(C_{22}\)</span> += A_{22}*B_{22}</li>
+<li>Wait for tasks 5-8 to complete.</li>
+</ol>
+<p>Note that there's some serialization here - tasks 5-8 need to wait for tasks 1-4 to complete, e.g. task 5 needs to wait for task 1 to complete. We chose this because it ensures that the fork-join approach doesn't use any extra memory. If instead we used scratch space for tasks 5-8 and had no write-write conflicts, we could have launched all 8 tasks at the same time, and then we could do elementwise addition of the output of task 5 with the output of task 1 and so on. Since elementwise addition is <span class="math">\(\Theta\)</span>(<span class="math">\(N^2\)</span>) time while matrix multiplication is <span class="math">\(\Theta\)</span>(<span class="math">\(N^3\)</span>) time, we would have gained further acceleration, at the cost of using extra memory. We could also use no additional memory, at the cost of making all memory writes atomic, which doesn't buy us much relative to the first scenario of 2 batches of tasks, since it serializes memory access.</p>
 <p>Let's see how this might look with practice, along with multi-threading. Note that I'm just considering the 4-way partitioning, but the system could have more cores, say 8, 16 or more. In practice, we need to make this algorithm adapt to the core count of the system. For now, however, the hard-coded 4-way split should illustrate the point.</p>
 <p>First, let's modify our loop-reordered algorithm so that it can take pointer offsets and work on independent sub-ranges of the flat memory, i.e. on the partitions of the matrix. The arguments such as <code>loM</code>, <code>hiM</code> and so on will guard the ranges that we're interested in. Note that with these low/high values, we need both the maximum M and K, but not N, since we don't need it for dimension striding. We still need the low and high values of K to guard the processing of the submatrix.</p>
 <div class="highlight"><pre><span></span><span class="kt">void</span> <span class="nf">iterativeMatmulLoopReorderSubMatrix</span><span class="p">(</span>
@@ -452,7 +469,7 @@ $$</div>
 </pre></div>
 
 
-<p>Now, let's schedule the work on different threads asynchronously, using C++11's <code>std::async</code>. Let's schedule work immediately using <code>std::launch::async</code>, and then only wait for the future to return a value if we have subsequent work to do on those particular memory addresses of the <span class="math">\(C\)</span> matrix. For example, in the partitioning, we see that <span class="math">\(C_11 = A_11*B_11 + A_12*B_21\)</span>. This means that in order to avoid allocating extra memory, we need to run one of the two parts of the sum first, then only start calculating the second once the first one finishes. Here's an example of how the above sub-matrix computation could be scheduled in this <a href="https://en.wikipedia.org/wiki/Fork%E2%80%93join_model">fork-join</a> scenario.</p>
+<p>Now, let's schedule the work on different threads asynchronously, using C++11's <code>std::async</code>. Let's schedule work immediately using <code>std::launch::async</code>, and then only wait for the future to return a value if we have subsequent work to do on those particular memory addresses of the <span class="math">\(C\)</span> matrix. For example, in the partitioning, we see that <span class="math">\(C_{11} = A_{11}*B_{11} + A_{12}*B_{21}\)</span>. This means that in order to avoid allocating extra memory, we need to run one of the two parts of the sum first, then only start calculating the second once the first one finishes. Here's an example of how the above sub-matrix computation could be scheduled in this <a href="https://en.wikipedia.org/wiki/Fork%E2%80%93join_model">fork-join</a> scenario.</p>
 <div class="highlight"><pre><span></span><span class="kt">void</span> <span class="nf">mtMatmul</span><span class="p">(</span><span class="kt">float</span><span class="o">*</span> <span class="k">const</span> <span class="n">A</span><span class="p">,</span>
               <span class="kt">float</span><span class="o">*</span> <span class="k">const</span> <span class="n">B</span><span class="p">,</span>
               <span class="kt">float</span><span class="o">*</span> <span class="k">const</span> <span class="n">C</span><span class="p">,</span>
@@ -499,7 +516,6 @@ $$</div>
 
     <span class="c1">// Second part of C11: A_12*B_21</span>
     <span class="n">c11P1</span><span class="p">.</span><span class="n">wait</span><span class="p">();</span>
-    <span class="c1">// TODO: launch second part of C11</span>
     <span class="k">auto</span> <span class="n">c11P2</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">async</span><span class="p">(</span>
             <span class="n">std</span><span class="o">::</span><span class="n">launch</span><span class="o">::</span><span class="n">async</span><span class="p">,</span>
             <span class="n">iterativeMatmulLoopReorderSubMatrix</span><span class="p">,</span>
@@ -529,7 +545,6 @@ $$</div>
 
     <span class="c1">// Second part of C21: A_22*B_22</span>
     <span class="n">c22P1</span><span class="p">.</span><span class="n">wait</span><span class="p">();</span>
-    <span class="c1">// TODO: launch second part of C22</span>
     <span class="k">auto</span> <span class="n">c22P2</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">async</span><span class="p">(</span>
             <span class="n">std</span><span class="o">::</span><span class="n">launch</span><span class="o">::</span><span class="n">async</span><span class="p">,</span>
             <span class="o">&amp;</span><span class="n">iterativeMatmulLoopReorderSubMatrix</span><span class="p">,</span>
@@ -554,7 +569,7 @@ $$</div>
 <p>Just to clarify, the CPU I mentioned above has 6 cores, but given the 4-way parallelism of the code, we'll only be using 4 out of 6 cores. For 1024x1024 matrices, the gain wasn't large - we went from 70 to 60 ms. This is likely because thread scheduling isn't cheap, so for small problems, the cost of the initial overhead wasn't amortized. Doing 8 times more work (2048x2048 matrices) resulted in an observable gain - execution time went from 504 ms to 220 ms - that's a speed-up of almost 2.3x! The more work we have to do per thread, the more amortized the threading overhead should become, and the closer to a linear speed-up we would get.</p>
 <h3>What we didn't cover</h3>
 <p>We clearly didn't cover vector processing on the CPU in detail, using instruction sets such as <a href="https://en.wikipedia.org/wiki/Advanced_Vector_Extensions">AVX</a> on x86 and <a href="https://en.wikipedia.org/wiki/ARM_architecture#Advanced_SIMD_(NEON)">NEON</a> on ARM. These will be covered in separate blog posts. Fortunately, in practice, using <code>-O3 -march=native</code> tends to benefit from some vectorization generated by the compiler, although usually it's not nearly good enough unless we know all dimensions statically. Hand-written assembly code would tend to do better, but that's a topic for another blog post.</p>
-<p>Also, there exist algorithms that do less work than <span class="math">\(\Theta(M*N*K)\)</span>, such as <a href="https://en.wikipedia.org/wiki/Strassen_algorithm">Strassen's algorithm</a>, but it deserves its own blog post, so I won't cover it now. Also, Strassen's algorithm can have worse numerical accuracy, so that's another reason to give it the detailed treatment that it deserves in a separate post. There are also other algorithms which has even better complexity than Strassen's algorithm, such as <a href="https://en.wikipedia.org/wiki/Coppersmith%E2%80%93Winograd_algorithm">Coppersmith-Winograd</a>, however these algorithms have gigantic constant factors, that are big enough that the better big-O performance only pays off for big enough problems that they don't fit on modern computers (that is, they are <a href="https://en.wikipedia.org/wiki/Galactic_algorithm">galactic algorithms</a>).</p>
+<p>Also, there exist algorithms that do less work than <span class="math">\(\Theta(MNK)\)</span>, such as <a href="https://en.wikipedia.org/wiki/Strassen_algorithm">Strassen's algorithm</a>, but it deserves its own blog post, so I won't cover it now. Also, Strassen's algorithm can have worse numerical accuracy, so that's another reason to give it the detailed treatment that it deserves in a separate post. There are also other algorithms which has even better complexity than Strassen's algorithm, such as <a href="https://en.wikipedia.org/wiki/Coppersmith%E2%80%93Winograd_algorithm">Coppersmith-Winograd</a>, however these algorithms have gigantic constant factors, that are big enough that the better big-O performance only pays off for big enough problems that they don't fit on modern computers (that is, they are <a href="https://en.wikipedia.org/wiki/Galactic_algorithm">galactic algorithms</a>).</p>
 <p>We also didn't cover distributed, communication-avoiding matrix multiplication algorithms, such as <a href="https://en.wikipedia.org/wiki/Cannon%27s_algorithm">Cannon's algorithm</a>. That would be a topic with enough content for yet another long blog post.</p>
 <script type="text/javascript">if (!document.getElementById('mathjaxscript_pelican_#%@#$@#')) {
     var align = "center",
