@@ -428,7 +428,8 @@ $$</div>
 <p><strong>TODO: Write down the algorithm for Divide and Conquer.</strong></p>
 <p>Let's see how this might look with practice, along with multi-threading. Note that I'm just considering the 4-way partitioning, but the system could have more cores, say 8, 16 or more. In practice, we need to make this algorithm adapt to the core count of the system. For now, however, the hard-coded 4-way split should illustrate the point.</p>
 <p>First, let's modify our loop-reordered algorithm so that it can take pointer offsets and work on independent sub-ranges of the flat memory, i.e. on the partitions of the matrix. The arguments such as <code>loM</code>, <code>hiM</code> and so on will guard the ranges that we're interested in. Note that with these low/high values, we need both the maximum M and K, but not N, since we don't need it for dimension striding. We still need the low and high values of K to guard the processing of the submatrix.</p>
-<div class="highlight"><pre><span></span>        <span class="kt">float</span><span class="o">*</span> <span class="k">const</span> <span class="n">A</span><span class="p">,</span>
+<div class="highlight"><pre><span></span><span class="kt">void</span> <span class="nf">iterativeMatmulLoopReorderSubMatrix</span><span class="p">(</span>
+        <span class="kt">float</span><span class="o">*</span> <span class="k">const</span> <span class="n">A</span><span class="p">,</span>
         <span class="kt">float</span><span class="o">*</span> <span class="k">const</span> <span class="n">B</span><span class="p">,</span>
         <span class="kt">float</span><span class="o">*</span> <span class="k">const</span> <span class="n">C</span><span class="p">,</span>
         <span class="k">const</span> <span class="kt">int</span> <span class="n">M</span><span class="p">,</span>
