@@ -431,10 +431,10 @@ $$</div>
 <li>partition <span class="math">\(B\)</span> into <span class="math">\(B_{11}\)</span>, <span class="math">\(B_{12}\)</span>, <span class="math">\(B_{21}\)</span>, <span class="math">\(B_{22}\)</span></li>
 <li>partition <span class="math">\(C\)</span> into <span class="math">\(C_{11}\)</span>, <span class="math">\(C_{12}\)</span>, <span class="math">\(C_{21}\)</span>, <span class="math">\(C_{22}\)</span></li>
 <li>Fork the work:</li>
-<li>fork task 1: <span class="math">\(C_{11}\)</span> += A_{11}*B_{11}</li>
-<li>fork task 2: <span class="math">\(C_{12}\)</span> += A_{11}*B_{12}</li>
-<li>fork task 3: <span class="math">\(C_{21}\)</span> += A_{21}*B_{11}</li>
-<li>fork task 4: <span class="math">\(C_{21}\)</span> += A_{21}*B_{12}</li>
+<li>fork task 1: <span class="math">\(C_{11}\)</span> += <span class="math">\(A_{11}\)</span>*<span class="math">\(B_{11}\)</span></li>
+<li>fork task 2: <span class="math">\(C_{12}\)</span> += <span class="math">\(A_{11}\)</span>*<span class="math">\(B_{12}\)</span></li>
+<li>fork task 3: <span class="math">\(C_{21}\)</span> += <span class="math">\(A_{21}\)</span>*<span class="math">\(B_{11}\)</span></li>
+<li>fork task 4: <span class="math">\(C_{21}\)</span> += <span class="math">\(A_{21}\)</span>*<span class="math">\(B_{12}\)</span></li>
 <li>Wait for dependent tasks and launch new ones:</li>
 <li>wait for task 1; fork task 5: <span class="math">\(C_{11}\)</span> += <span class="math">\(A_{12}\)</span>*<span class="math">\(B_{21}\)</span></li>
 <li>wait for task 2; fork task 6: <span class="math">\(C_{12}\)</span> += <span class="math">\(A_{12}\)</span>*<span class="math">\(B_{22}\)</span></li>
