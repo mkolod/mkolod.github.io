@@ -304,8 +304,12 @@ Unfortunately, even loop reordering isn't ideal. For one, even if data is prefet
 <p>Let's cover some basics of computer caches. We won't go into too much detail, so feel to review more at your own leisure <a href="https://en.wikipedia.org/wiki/Cache_(computing)">here</a>. </p>
 <p>Caches aren't exactly ideal in practice. They tend to use heuristics for eviction policies, they aren't fully <a href="https://en.wikipedia.org/wiki/Cache_placement_policies">associative</a>, etc. However, it turns out that practical caches can be assumed to be ideal for practical code analysis to simplify things. An ideal cache has several characteristics:</p>
 <ul>
-<li>It is fully associative. This means that there exists a single cache set with multiple cache lines, and a given memory block can occupy any of them. If we take a cache line to be of size 1 of some units, this would mean that the cache can be viewed as a matrix with m rows and 1 column.</li>
-<li>The cache has an omniscient residency/eviction policy. This assumes a perfect policy not just accounting for the past, but also the future, anticipating what may be needed next.</li>
+<li>
+<p>It is fully associative. This means that there exists a single cache set with multiple cache lines, and a given memory block can occupy any of them. If we take a cache line to be of size 1 of some units, this would mean that the cache can be viewed as a matrix with m rows and 1 column.</p>
+</li>
+<li>
+<p>The cache has an omniscient residency/eviction policy. This assumes a perfect policy not just accounting for the past, but also the future, anticipating what may be needed next.</p>
+</li>
 </ul>
 <p>It turns out that while such assumptions are unreasonable, they can approximate a practical cache relatively well. The least-recently used assumption can replace the assumption of omniscience. Sleator and Tarjan (1985) <a href="https://www.cs.cmu.edu/~sleator/papers/amortized-efficiency.pdf">demonstrated</a> that given an omniscient cache with M bytes and Q cache misses, it can be replaced with a cache with an LRU cache with 2M bytes and 2Q cache misses. Therefore, the omniscience assumption can be approximated by a real, practical cache up to a small, known constant factor. The full associativity assumption is also true up to a point, e.g. L1 caches in recent Intel Core i7 CPUs are 8-way set associative, etc.</p>
 <p>We also need to make a "tall cache" assumption, which means that the number of bytes per cache line is much less than the number of cache lines. Formally, if a cache line has B bytes and the cache has M bytes total (giving us <span class="math">\(\frac{M}{B}\)</span> cache lines), we assume that <span class="math">\(B^2 &lt; c*M\)</span> for <span class="math">\(c \le 1\)</span>.</p>
