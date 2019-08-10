@@ -392,11 +392,13 @@ Unfortunately, even loop reordering isn't ideal. For one, even if data is prefet
 </ul>
 <p><strong>Clang 3.8.0</strong></p>
 <ul>
-<li>Loop reordering (non-templated <span class="math">\(MNK\)</span>): 70 ms</li>
-<li>Loop reordering (templated <span class="math">\(MNK\)</span>): 70 ms</li>
+<li>Loop reordering (non-templated <span class="math">\(MNK\)</span>): 72 ms</li>
+<li>Loop reordering (templated <span class="math">\(MNK\)</span>): 69 ms</li>
 <li>Tiling (best tile size=16): 79 ms</li>
 </ul>
-<p>These results are stunning! It's amazing how drastically different the performance of tiled code is when we switch compilers. In general, the performance gain of simple loop reordering is very stable, across both different compilers and CPUs, while the gains from tiling have extremely large variation. Even in the clang case where tiling is doing pretty well, changing the tile size resulted in a performance cliff. This is concerning since we may have different CPUs to take care of, and we would need to know optimal sizes for each. Even then, loop reordering is still a bit better. The lesson here is: don't believe textbooks, measure performance for everything you do. Or, as the Cold War saying goes: "<a href="https://en.wikipedia.org/wiki/Trust,_but_verify">trust, but verify</a>." We'll see in another blog post that tiling is key to GPU matrix multiplication performance, but for CPUs, we have many other and possibly better options.</p>
+<p>These results are stunning! It's amazing how drastically different the performance of tiled code is when we switch compilers. Clang clearly wins by a huge margin in the tiling case, but GCC was better for the loop reordering case.</p>
+<p>In general, the performance gain of simple loop reordering is very stable, across both different compilers and CPUs, while the gains from tiling have extremely large variation. Even in the clang case where tiling is doing pretty well, changing the tile size resulted in a performance cliff. For example, changing tile size from 16 to 8 resulted in performance degradation from 79 ms to 336 ms, and a tile size of 32 took 629 ms.</p>
+<p>The instability of tiling performance across both tile sizes and compilers is concerning since we may have different CPUs to take care of, and we would need to know optimal sizes for each. Even then, loop reordering is still a bit better. The lesson here is: don't believe textbooks, measure performance for everything you do. Or, as the Cold War saying goes: "<a href="https://en.wikipedia.org/wiki/Trust,_but_verify">trust, but verify</a>." We'll see in another blog post that tiling is key to GPU matrix multiplication performance, but for CPUs, we have many other and possibly better options.</p>
 <p>Can we do any better than loop reordering? So far, we haven't even discussed optimizing matrix multiplication for multi-core CPUs.</p>
 <h3>Divide-and-conquer algorithm</h3>
 <p>The divide-and-conquer algorithm is cache-agnostic, in that it doesn't depend on the tile size. Since it's based on the <a href="https://en.wikipedia.org/wiki/Fork%E2%80%93join_model">fork-join</a> paradigm, it can also be implemented in a way that exploits multi-core processing. </p>
