@@ -400,6 +400,45 @@ Unfortunately, even loop reordering isn't ideal. For one, even if data is prefet
 <p>In general, the performance gain of simple loop reordering is very stable, across both different compilers and CPUs, while the gains from tiling have extremely large variation. Even in the clang case where tiling is doing pretty well, changing the tile size resulted in a performance cliff. For example, changing tile size from 16 to 8 resulted in performance degradation from 79 ms to 336 ms, and a tile size of 32 took 629 ms.</p>
 <p>The instability of tiling performance across both tile sizes and compilers is concerning since we may have different CPUs to take care of, and we would need to know optimal sizes for each. Even then, loop reordering is still a bit better. The lesson here is: don't believe textbooks, measure performance for everything you do. Or, as the Cold War saying goes: "<a href="https://en.wikipedia.org/wiki/Trust,_but_verify">trust, but verify</a>." We'll see in another blog post that tiling is key to GPU matrix multiplication performance, but for CPUs, we have many other and possibly better options.</p>
 <p>Can we do any better than loop reordering? So far, we haven't even discussed optimizing matrix multiplication for multi-core CPUs.</p>
+<h3>Performance summary</h3>
+<p>Let's summarize what we achieved so far for the 1,024x1,024 matrix multiplication. In addition to listing time, let's list floating-point operations per second (FLOPs/s).</p>
+<p>The total number of FLOPs for 1,024x1,024 matrix multiplication is <span class="math">\(2*M*NK\)</span>, or <span class="math">\(2*\)</span>1024^3<span class="math">\(, i.e. $2*\)</span><span class="math">\(2^30\)</span>, i.e. 2 <a href="https://en.wikipedia.org/wiki/Binary_prefix">GibiFLOPs</a>, ~2.14 GigaFLOPs (GFLOPs). We can get FLOPs/s by dividing the total number of FLOPs by the number in seconds the implementation takes. Let's check out the summary now.</p>
+<table>
+<thead>
+<tr>
+<th>Algorithm</th>
+<th>time (ms)</th>
+<th>GFLOPs/s</th>
+<th>Speedup rel. to naive</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>naive</td>
+<td>1,601</td>
+<td>1.34</td>
+<td>1.00</td>
+</tr>
+<tr>
+<td>register accum</td>
+<td>1,070</td>
+<td>2.00</td>
+<td>1.50</td>
+</tr>
+<tr>
+<td>loop reordering</td>
+<td>63</td>
+<td>34.09</td>
+<td>25.41</td>
+</tr>
+<tr>
+<td>reordering + templ.</td>
+<td>53</td>
+<td>40.52</td>
+<td>30.21</td>
+</tr>
+</tbody>
+</table>
 <h3>Divide-and-conquer algorithm</h3>
 <p>The divide-and-conquer algorithm is cache-agnostic, in that it doesn't depend on the tile size. Since it's based on the <a href="https://en.wikipedia.org/wiki/Fork%E2%80%93join_model">fork-join</a> paradigm, it can also be implemented in a way that exploits multi-core processing. </p>
 <p>Here's a mathematical representation of this concept. Let's divide both matrices into 4 <a href="https://en.wikipedia.org/wiki/Block_matrix">submatrices</a>, i.e. partitioning vertically and horizontally.</p>
