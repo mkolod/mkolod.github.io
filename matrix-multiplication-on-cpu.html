@@ -402,7 +402,7 @@ Unfortunately, even loop reordering isn't ideal. For one, even if data is prefet
 <p>Can we do any better than loop reordering? So far, we haven't even discussed optimizing matrix multiplication for multi-core CPUs.</p>
 <h3>Performance summary</h3>
 <p>Let's summarize what we achieved so far for the 1,024x1,024 matrix multiplication. In addition to listing time, let's list floating-point operations per second (FLOPs/s).</p>
-<p>The total number of FLOPs for 1,024x1,024 matrix multiplication is <span class="math">\(2*M*NK\)</span>, or <span class="math">\(2*\)</span>1024^3<span class="math">\(, i.e. $2*\)</span><span class="math">\(2^30\)</span>, i.e. 2 <a href="https://en.wikipedia.org/wiki/Binary_prefix">GibiFLOPs</a>, ~2.14 GigaFLOPs (GFLOPs). We can get FLOPs/s by dividing the total number of FLOPs by the number in seconds the implementation takes. Let's check out the summary now.</p>
+<p>The total number of FLOPs for 1,024x1,024 matrix multiplication is <span class="math">\(2MNK\)</span>, or <span class="math">\(2\)</span>*<span class="math">\(1024^3\)</span>, i.e. <span class="math">\(2*\)</span><span class="math">\(2^{30}\)</span>, i.e. 2 <a href="https://en.wikipedia.org/wiki/Binary_prefix">GibiFLOPs</a>, ~2.14 GigaFLOPs (GFLOPs). We can get FLOPs/s by dividing the total number of FLOPs by the number in seconds the implementation takes. Let's check out the summary now.</p>
 <table>
 <thead>
 <tr>
@@ -436,6 +436,24 @@ Unfortunately, even loop reordering isn't ideal. For one, even if data is prefet
 <td>53</td>
 <td>40.52</td>
 <td>30.21</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
 </tr>
 </tbody>
 </table>
