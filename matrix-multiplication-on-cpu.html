@@ -457,6 +457,15 @@ Unfortunately, even loop reordering isn't ideal. For one, even if data is prefet
 </tr>
 </tbody>
 </table>
+<p>Note that the Core i7-7800X CPU has 6 cores, each of which has 2 AVX units, which can do 16 floating point operations per clock. Since AVX supports fused multiply-add instructions, for matrix multiplication, we can count 32 FLOPs/cycle. There are 2 AVX units per core. If we multiply it all out (2.8*10^9 Hz * 32 FLOPs/Hz/AVX unit * 2 AVX units/core * 6 cores), we'll see that the CPU is capable of max arithmetic throughput of 1,075.2 GFLOPs, while we got at most 40. Note though that there are several factors that prevent all this compute power from ever getting used:</p>
+<ul>
+<li>limited data bandwidth between CPU and RAM</li>
+<li>during cache misses, we have to deal with the RAM latency</li>
+<li>CPU/OS/other process context switches (and possible cache evictions)</li>
+<li>control flow is required to check boundary conditions, using up cycles that could have gone to the computation</li>
+<li>problem size (1,024x1,024 matrix multiplication is a small problem for the CPU to warrant multi-threading across cores)</li>
+</ul>
+<p>Still, let's imagine that we could at least get the top single-threaded performance on 1 core, which would have given us 179.2 GFLOPs. Even that ends up being unrealistic for a small problem, and we end up getting about a 2x speed-up over our simply-optimized best case. Still, if we assume that we're multiplying much bigger matrices, the gap between manually optimized routines and ones provided by Intel as part of their Math Kernel Library (<a href="https://software.intel.com/en-us/mkl">MKL</a>) can only grow. The bottom line is: this is an post about how to think about optimizations, I don't recommend that you hand-tune linear algebra routines. That's why optimized libraries such as Intel's MKL, ARM's <a href="https://developer.arm.com/tools-and-software/server-and-hpc/arm-architecture-tools/arm-performance-libraries">Performance Libraries</a> and other vendor-specific libraries exist.</p>
 <h3>Divide-and-conquer algorithm</h3>
 <p>The divide-and-conquer algorithm is cache-agnostic, in that it doesn't depend on the tile size. Since it's based on the <a href="https://en.wikipedia.org/wiki/Fork%E2%80%93join_model">fork-join</a> paradigm, it can also be implemented in a way that exploits multi-core processing. </p>
 <p>Here's a mathematical representation of this concept. Let's divide both matrices into 4 <a href="https://en.wikipedia.org/wiki/Block_matrix">submatrices</a>, i.e. partitioning vertically and horizontally.</p>
