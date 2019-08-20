@@ -98,6 +98,10 @@
 
 <p>Of course, this looks simple, but how would we do it efficiently? That deepends on the network topology. We could have various topologies, such as a <a href="https://en.wikipedia.org/wiki/Fat_tree">fat tree</a>, <a href="https://en.wikipedia.org/wiki/Mesh_networking">mesh</a>, <a href="https://en.wikipedia.org/wiki/Ring_network">ring</a>, etc. Here, we will focus on a ring topology, because it's a popular setup, and one that can very efficiently utilize network bandwidth.</p>
 <h3>Communication on a ring</h3>
+<p>In a ring, each device has 2 neighbors - let's call them left and right neighbors. A device can only send data directly to its neighbors, otherwise it needs to make several hops.</p>
+<p><img alt="Ring Topology" src="./images/ring_topology.svg">
+Image credit: Wikipedia</p>
+<p>In reality, few networks are designed this way, because sending data to devices that are several hops away would be very costly, wasting bandwidth of intermediate devices and adding latency of extra hops. Another problem with such an arrangement is that if one of the links between neighbors breaks, the whole network can go down. At the same time, even if you imagine a network with a different topology, say a fat tree, you could arrange communication in such a way that allreduce still takes paths on a ring. There are many algorithms which wouldn't take advantage of a ring arrangement, e.g. when all-to-all communication is needed, but ring is perfectly fine for allreduce. In fact, allreduce on a ring is <a href="http://www.cs.fsu.edu/~xyuan/paper/09jpdc.pdf">bandwidth-optimal</a>, so if you have a lot of data to send, this is actually a perfect algorithm. Ring allreduce isn't latency-optimal, and other algorithms and topologies are preferred in that case. For now though, let's assume that we have a problem that requires us to optimally use the bandwidth.</p>
 <h1>TODO - work in progress</h1>
 <h3>Ring Allreduce - a bandwidth-optimal algorithm</h3>
 <h3>Reduce-Scatter</h3>
