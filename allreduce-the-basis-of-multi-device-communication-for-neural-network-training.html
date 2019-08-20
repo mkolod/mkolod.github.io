@@ -113,9 +113,7 @@
 
 <span class="k">def</span> <span class="nf">reduce_scatter</span><span class="p">(</span><span class="n">chunks</span><span class="p">):</span>
     <span class="k">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">REDUCE-SCATTER</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
-
     <span class="n">gpus</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">chunks</span><span class="p">)</span>
-
     <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">gpus</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
         <span class="k">print</span><span class="p">(</span><span class="s2">&quot;step {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">step</span><span class="p">))</span>
         <span class="k">for</span> <span class="n">gpu</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">gpus</span><span class="p">):</span>
@@ -188,7 +186,6 @@ Current state:
 <div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">allgather</span><span class="p">(</span><span class="n">chunks</span><span class="p">):</span>
     <span class="k">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">ALLGATHER</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
     <span class="n">gpus</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">chunks</span><span class="p">)</span>
-
     <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">gpus</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
         <span class="k">print</span><span class="p">(</span><span class="s2">&quot;step {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">step</span><span class="p">))</span>
         <span class="k">for</span> <span class="n">gpu</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">gpus</span><span class="p">):</span>
