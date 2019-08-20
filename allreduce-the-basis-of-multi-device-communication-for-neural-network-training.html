@@ -79,7 +79,7 @@
         <div class="span8 offset2 article-content">
             
             <h3>Introduction</h3>
-<p>For big deep learning models and datasets, training on a single GPU (or TPU or CPU) may not be fast enough. For example, according to NVIDIA's <a href="https://github.com/NVIDIA/Megatron-LM">Megatron-LM</a> code base, training BERT Large takes 3 days on 64 Tesla V100 GPUs. Assuming linear scaling, this would mean that training on a single GPU would have taken 192 days, or more than 6 months! Of course, scaling is hardly ever perfectly linear, but even if we assume 50% efficiency, that would have still meant 3 months instead of 3 days. Scaling is what makes certain problems feasible that used not to be viable with smaller compute resources. Big O of a task may not change, but scaling up the processing of a problem with a given complexity can make a difference. </p>
+<p>For big deep learning models and datasets, training on a single GPU (or TPU or CPU) may not be fast enough. For example, according to NVIDIA's <a href="https://github.com/NVIDIA/Megatron-LM">Megatron-LM</a> code base, training <a href="https://arxiv.org/pdf/1810.04805.pdf">BERT</a> Large takes 3 days on 64 Tesla V100 GPUs. Assuming linear scaling, this would mean that training on a single GPU would have taken 192 days, or more than 6 months! Of course, scaling is hardly ever perfectly linear, but even if we assume 50% efficiency, that would have still meant 3 months instead of 3 days. Scaling is what makes certain problems feasible that used not to be viable with smaller compute resources. Big O of a task may not change, but scaling up the processing of a problem with a given complexity can make a difference. </p>
 <p>The benefit of mini-batch stochastic gradient descent (<a href="https://en.wikipedia.org/wiki/Stochastic_gradient_descent">SGD</a>) and related optimization algorithms is that they take a few examples a time and run the forward and backward passes with enough data at once to keep the hardware busy. For example, in case of the GPU, we want at least have enough data to exploit <a href="https://en.wikipedia.org/wiki/Data_parallelism">data parallelism</a> for <a href="https://softwareengineering.stackexchange.com/questions/140534/what-makes-an-application-memory-bandwidth-bound">bandwidth-bound</a> layers, and to get both data parallelism and <a href="http://wgropp.cs.illinois.edu/courses/cs598-s16/lectures/lecture11.pdf">data reuse</a> for <a href="https://en.wikipedia.org/wiki/CPU-bound">compute-bound</a> operations such as matrix multiplication or convolution. The same logic applies to multi-GPU and multi-node processing - given a per device batch size N and K devices, we could simply sample a larger batch KN and still have N examples to work with per device. Typically, as the batch size grows, we can increase the learning rate and take fewer steps over the data, with each step contributing to a larger update of the weights. This actually doesn't always work well without various heuristics (e.g. <a href="https://arxiv.org/pdf/1706.02677.pdf">1</a>, <a href="https://arxiv.org/pdf/1711.04325.pdf">2</a>, <a href="https://arxiv.org/pdf/1708.03888.pdf">3</a>), but with the heuristics, we can scale training and converge much faster on many GPUs/TPUs/CPUs or many multi-device nodes. </p>
 <p>Training on multiple devices requires communication between devices, so let's now talk about communication points. </p>
 <h3>Deep learning training communication patterns</h3>
@@ -106,9 +106,8 @@
 <p>In reality, few networks are designed this way, because sending data to devices that are several hops away would be very costly, wasting bandwidth of intermediate devices and adding latency of extra hops. Another problem with such an arrangement is that if one of the links between neighbors breaks, the whole network can go down. At the same time, even if you imagine a network with a different topology, say a fat tree, you could arrange communication in such a way that allreduce still takes paths on a ring. There are many algorithms which wouldn't take advantage of a ring arrangement, e.g. when all-to-all communication is needed, but ring is perfectly fine for allreduce. In fact, allreduce on a ring is <a href="http://www.cs.fsu.edu/~xyuan/paper/09jpdc.pdf">bandwidth-optimal</a>, so if you have a lot of data to send, this is actually a perfect algorithm. Ring allreduce isn't latency-optimal, and other algorithms and topologies are preferred in that case. For now though, let's assume that we have a problem that requires us to optimally use the bandwidth.</p>
 <p>Ring allreduce is actually a meta <a href="http://www.rc.usf.edu/tutorials/classes/tutorial/mpi/chapter8.html">communication collective</a>, composed on two simpler collectives: reduce-scatter and allgather.</p>
 <h3>Reduce-Scatter</h3>
-<p>Reduce-scatter simply means that we wait on a message from our left neighbor, reduce (accumulate in some way, e.g. add) the incoming state, and on the next iteration of the communication, we send that message to our right neighbor. If we divide the data tensor into K chunks, where K is the number of GPUs, we'll always be receiving and sending only one of the K chunks. It is easy to see that if each of the chunks is received, reduced and passed around K-1 times, then the device that receives and accumulates the chunk last will have the fully reduced result. Note that at each stage, a given device sends and receives a different chunk.</p>
-<p>We can start at different chunks, as long as we're consistent with changing the chunks each device processes in a consistent order. Let's first assume that we're zero-indexed, so our devices go from 0 to k-1. To start with, device k sends chunk k to its right neighbor, and receives chunk k-1. Note that since we have a ring, so even device 0 has a left neighor, we do a "wrap-around." That is, device 0 receives the data from device k-1 from chunk k-1 (since on the first round, device k-1 would be sending chunnk k-1. In Python it's especially natural to do this, since -1 actually indexes into the last element of the array (k-1 since Python is zero-indexed), -2 indexes into the index before the last and so on. Since we want to identify real devices, let's just do modulo k, which will convert the negative device and chunk IDs into values from 0 to k-1.</p>
-<h1>TODO - work in progress (mention which chunks are sent next)</h1>
+<p>Reduce-scatter simply means that we wait on a message from our preceding neighbor, reduce (accumulate in some way, e.g. add) the incoming state, and on the next iteration of the communication, we send that message to our succeding neighbor. If we divide the data tensor into K chunks, where K is the number of GPUs, we'll always be receiving and sending only one of the K chunks. It is easy to see that if each of the chunks is received, reduced and passed around K-1 times, then the device that receives and accumulates the chunk last will have the fully reduced result. Note that at each stage, a given device sends and receives a different chunk.</p>
+<p>We can start at different chunks, as long as we're consistent with changing the chunks each device processes in a consistent order. Let's first assume that we're zero-indexed, so our devices go from 0 to k-1. To start with, device k sends chunk k to its succeeding neighbor (device k+1), and receives chunk k-1 from its preceding neighbor (device k-1). Note that since we have a ring, so even device 0 has a left neighor, we do a "wrap-around." That is, device 0 receives the data from device k-1 from chunk k-1 (since on the first round, device k-1 would be sending chunnk k-1. In Python it's especially natural to do this, since -1 actually indexes into the last element of the array (k-1 since Python is zero-indexed), -2 indexes into the index before the last and so on. Since we want to identify real devices, let's just do modulo k, which will convert the negative device and chunk IDs into values from 0 to k-1.</p>
 <p>Here's some simple Python code to show you how it works. I'm only using NumPy here to pretty-print the 2D array. The rows of the 2D array represent devices, and columns represent chunks.</p>
 <div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 
@@ -143,7 +142,9 @@
 
 <p>As I mentioned, rows represent devices and columns represent chunks. Hence, the first device has an appended 0 to all the chunk names, and all devices have chunks a through e.</p>
 <p>In our case, allreduce is about summing up the values. Since it might be difficult to track the summing for rumerical data, here I chose text data, and the + operator will simply concatenate the text. This way, we'll know that the longest text in the column is the most recent result.</p>
-<div class="highlight"><pre><span></span>step 0
+<div class="highlight"><pre><span></span>REDUCE-SCATTER
+
+step 0
 gpu 0 sends chunk 0, receives chunk 3
 gpu 1 sends chunk 1, receives chunk 0
 gpu 2 sends chunk 2, receives chunk 1
@@ -177,38 +178,39 @@ Current state:
 [[&#39;a0&#39; &#39;b0b3b2b1&#39; &#39;c0c3c2&#39; &#39;d0d3&#39;]
  [&#39;a1a0&#39; &#39;b1&#39; &#39;c1c0c3c2&#39; &#39;d1d0d3&#39;]
  [&#39;a2a1a0&#39; &#39;b2b1&#39; &#39;c2&#39; &#39;d2d1d0d3&#39;]
- [&#39;a3a2a1a0&#39; &#39;b3b2b1&#39; &#39;c3c2&#39; &#39;d3&#39;]]```
+ [&#39;a3a2a1a0&#39; &#39;b3b2b1&#39; &#39;c3c2&#39; &#39;d3&#39;]]
+</pre></div>
 
-### AllGather
 
-Allgather is even simpler than reduce-scatter. It simply means that a given device passes the completely reduced chunk (the one that was computed at the last iteration of reduce-scatter) to the next device. On the next iteration, that device passes the same chunk to the following device. Allgather simply copies the data for a given chunk across all devices - there&#39;s no reduction or any other kind of computation.
+<h3>AllGather</h3>
+<p>Allgather is even simpler than reduce-scatter. It simply means that a given device passes the completely reduced chunk (the one that was computed at the last iteration of reduce-scatter) to the next device. On the next iteration, that device passes the same chunk to the following device. Allgather simply copies the data for a given chunk across all devices - there's no reduction or any other kind of computation.</p>
+<p>Given the arrangement that we made for reduce-scatter (first having device k send chunk k and receive chunk k-1 with wrap-around), we'll have the "most reduced" chunk for device k in chunk k+1 (with wrap-around, i.e. for device K-1 it'll be chunk 0). Thus, at the first iteration, device k sends chunk k+1 to device k+1 nd receives chunk k from device k-1. Next, each device sends the chunk it received, e.g. device k will send chunk k to device k+1 and receive chunk k-1 from device k-1,, and so on.</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">allgather</span><span class="p">(</span><span class="n">chunks</span><span class="p">):</span>
+    <span class="k">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">ALLGATHER</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">gpus</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">chunks</span><span class="p">)</span>
 
-Given the arrangement that we made for reduce-scatter (first having device k send chunk k and receive chunk k-1 with wrap-around), we&#39;ll have the &quot;most reduced&quot; chunk for device k in chunk k+1 (with wrap-around, i.e. for device K-1 it&#39;ll be chunk 0). Thus, at the first iteration, device k sends chunk k+1 and receives chunk k. Next, each device sends the chunk it received, e.g. device k will send chunk k and receive chunk k-1, and so on.
-
-```python
-def allgather(chunks):
-    print(&quot;\nALLGATHER\n&quot;)
-    gpus = len(chunks)
-
-    for step in range(gpus - 1):
-        print(&quot;step {}&quot;.format(step))
-        for gpu in range(gpus):
-            idx_to_send = (gpu + 1 - step) % gpus
-            prev_idx_to_send = (gpu - step) % gpus
-            idx_to_recv = (gpu - step) % gpus
-            chunks[gpu][idx_to_recv] = chunks[(gpu - 1) % gpus][prev_idx_to_send]
-            print(&quot;gpu {} sends chunk {}, receives chunk {}&quot;.format(gpu, idx_to_send, idx_to_recv))
-        print(&quot;\nCurrent state:&quot;)
-        print(np.array(chunks), &quot;\n&quot;)
-    return chunks
+    <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">gpus</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="k">print</span><span class="p">(</span><span class="s2">&quot;step {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">step</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">gpu</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">gpus</span><span class="p">):</span>
+            <span class="n">idx_to_send</span> <span class="o">=</span> <span class="p">(</span><span class="n">gpu</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">step</span><span class="p">)</span> <span class="o">%</span> <span class="n">gpus</span>
+            <span class="n">prev_idx_to_send</span> <span class="o">=</span> <span class="p">(</span><span class="n">gpu</span> <span class="o">-</span> <span class="n">step</span><span class="p">)</span> <span class="o">%</span> <span class="n">gpus</span>
+            <span class="n">idx_to_recv</span> <span class="o">=</span> <span class="p">(</span><span class="n">gpu</span> <span class="o">-</span> <span class="n">step</span><span class="p">)</span> <span class="o">%</span> <span class="n">gpus</span>
+            <span class="n">chunks</span><span class="p">[</span><span class="n">gpu</span><span class="p">][</span><span class="n">idx_to_recv</span><span class="p">]</span> <span class="o">=</span> <span class="n">chunks</span><span class="p">[(</span><span class="n">gpu</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="n">gpus</span><span class="p">][</span><span class="n">prev_idx_to_send</span><span class="p">]</span>
+            <span class="k">print</span><span class="p">(</span><span class="s2">&quot;gpu {} sends chunk {}, receives chunk {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">gpu</span><span class="p">,</span> <span class="n">idx_to_send</span><span class="p">,</span> <span class="n">idx_to_recv</span><span class="p">))</span>
+        <span class="k">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Current state:&quot;</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">chunks</span><span class="p">),</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">chunks</span>
 </pre></div>
 
 
 <p>As a reminder, here's the output of reduce-scatter from before:</p>
-<p><code>[['a0' 'b0b3b2b1' 'c0c3c2' 'd0d3']
- ['a1a0' 'b1' 'c1c0c3c2' 'd1d0d3']
- ['a2a1a0' 'b2b1' 'c2' 'd2d1d0d3']
- ['a3a2a1a0' 'b3b2b1' 'c3c2' 'd3']]</code></p>
+<div class="highlight"><pre><span></span><span class="k">[[&#39;a0&#39; &#39;b0b3b2b1&#39; &#39;c0c3c2&#39; &#39;d0d3&#39;]</span>
+ <span class="k">[&#39;a1a0&#39; &#39;b1&#39; &#39;c1c0c3c2&#39; &#39;d1d0d3&#39;]</span>
+ <span class="k">[&#39;a2a1a0&#39; &#39;b2b1&#39; &#39;c2&#39; &#39;d2d1d0d3&#39;]</span>
+ <span class="k">[&#39;a3a2a1a0&#39; &#39;b3b2b1&#39; &#39;c3c2&#39; &#39;d3&#39;]]</span>
+</pre></div>
+
+
 <p>Let's now run allgather:</p>
 <div class="highlight"><pre><span></span>step 0
 gpu 0 sends chunk 1, receives chunk 0
@@ -249,7 +251,72 @@ Current state:
 
 
 <p>We can clearly see that each device (row) has all the chunks (columns) for a-d concatenated, and that the chunks (columns) have been copied to all devices (rows). We are done.</p>
-<p><strong>TODO: Show that this algorithm is bandwidth-optimal.</strong></p>
+<h3>Final thoughts</h3>
+<p>As mentioned before, ring allreduce is bandwidth-optimal, and we can have non-ring topologies for that, e.g. a tree (for details, see <a href="https://www.cs.fsu.edu/~xyuan/paper/09jpdc.pdf">here</a>). The issue that most people forget about is that bandwidth-optimal algorithms aren't always the best. For small amounts of data, latency matters, and ring allreduce isn't latency optimal.</p>
+<p>To see this, consier first that ring allreduce takes 2*(K-1), or 2K - 2, steps to complete. If we have data filling the network links, ring allreduce works great. But what if we had one float value to allreduce, which took 4 bytes? With high-bandwidth links such as InfiniBand NDR, we could have huge bandwith, e.g. 100 Gb/s. Clearly, transmitting 1 float wouldn't benefit from using a bandwidth optimal algorithm, but would benefit from an algorithm with low latency. In tree allreduce, we can do a tree reduction in <span class="math">\(log_{2}(K)\)</span> steps, and then broadcast the results back via thee tree in <span class="math">\(log_{2}(K)\)</span> steps, for a total of <span class="math">\(2log_{2}(K)\)</span> steps. This is clearly better in terms of the number of steps. For instance, say we have an 8-GPU machine such as the NVIDIA DGX-1. Doing ring allreduce would take 14 steps, while tree allreduce would take 6 steps. If we have little data to communicate, the time per step may be dominated by network interface and physical transmission latency, not by the time it takes to transfer data. Essentially, until we fill up the links, the cost of the data transfer is constant, but the latency grows with the number of steps.</p>
+<p>In general, communications collectives libraries such as various implementations of <a href="https://en.wikipedia.org/wiki/Message_Passing_Interface">MPI</a> or NVIDIA's <a href="https://developer.nvidia.com/nccl">NCCL</a> tend to have multiple algorithms to run a particular collective, such as allreduce, allgather, all-to-all, etc. Depending on the topology, link latency, bandwidth and the size of the data to be communicated, different algorithms may be preferable.  </p>
+<script type="text/javascript">if (!document.getElementById('mathjaxscript_pelican_#%@#$@#')) {
+    var align = "center",
+        indent = "0em",
+        linebreak = "false";
+
+    if (false) {
+        align = (screen.width < 768) ? "left" : align;
+        indent = (screen.width < 768) ? "0em" : indent;
+        linebreak = (screen.width < 768) ? 'true' : linebreak;
+    }
+
+    var mathjaxscript = document.createElement('script');
+    mathjaxscript.id = 'mathjaxscript_pelican_#%@#$@#';
+    mathjaxscript.type = 'text/javascript';
+    mathjaxscript.src = 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.3/latest.js?config=TeX-AMS-MML_HTMLorMML';
+
+    var configscript = document.createElement('script');
+    configscript.type = 'text/x-mathjax-config';
+    configscript[(window.opera ? "innerHTML" : "text")] =
+        "MathJax.Hub.Config({" +
+        "    config: ['MMLorHTML.js']," +
+        "    TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'none' } }," +
+        "    jax: ['input/TeX','input/MathML','output/HTML-CSS']," +
+        "    extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']," +
+        "    displayAlign: '"+ align +"'," +
+        "    displayIndent: '"+ indent +"'," +
+        "    showMathMenu: true," +
+        "    messageStyle: 'normal'," +
+        "    tex2jax: { " +
+        "        inlineMath: [ ['\\\\(','\\\\)'] ], " +
+        "        displayMath: [ ['$$','$$'] ]," +
+        "        processEscapes: true," +
+        "        preview: 'TeX'," +
+        "    }, " +
+        "    'HTML-CSS': { " +
+        "        availableFonts: ['STIX', 'TeX']," +
+        "        preferredFont: 'STIX'," +
+        "        styles: { '.MathJax_Display, .MathJax .mo, .MathJax .mi, .MathJax .mn': {color: 'inherit ! important'} }," +
+        "        linebreaks: { automatic: "+ linebreak +", width: '90% container' }," +
+        "    }, " +
+        "}); " +
+        "if ('default' !== 'default') {" +
+            "MathJax.Hub.Register.StartupHook('HTML-CSS Jax Ready',function () {" +
+                "var VARIANT = MathJax.OutputJax['HTML-CSS'].FONTDATA.VARIANT;" +
+                "VARIANT['normal'].fonts.unshift('MathJax_default');" +
+                "VARIANT['bold'].fonts.unshift('MathJax_default-bold');" +
+                "VARIANT['italic'].fonts.unshift('MathJax_default-italic');" +
+                "VARIANT['-tex-mathit'].fonts.unshift('MathJax_default-italic');" +
+            "});" +
+            "MathJax.Hub.Register.StartupHook('SVG Jax Ready',function () {" +
+                "var VARIANT = MathJax.OutputJax.SVG.FONTDATA.VARIANT;" +
+                "VARIANT['normal'].fonts.unshift('MathJax_default');" +
+                "VARIANT['bold'].fonts.unshift('MathJax_default-bold');" +
+                "VARIANT['italic'].fonts.unshift('MathJax_default-italic');" +
+                "VARIANT['-tex-mathit'].fonts.unshift('MathJax_default-italic');" +
+            "});" +
+        "}";
+
+    (document.body || document.getElementsByTagName('head')[0]).appendChild(configscript);
+    (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
+}
+</script>
 
 
             
