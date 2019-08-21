@@ -95,7 +95,7 @@
 </pre></div>
 
 
-<p>Of course, this looks simple, but how would we do it efficiently? That deepends on the network topology. We could have various topologies, such as a <a href="https://en.wikipedia.org/wiki/Fat_tree">fat tree</a>, <a href="https://en.wikipedia.org/wiki/Mesh_networking">mesh</a>, <a href="https://en.wikipedia.org/wiki/Ring_network">ring</a>, etc. Here, we will focus on a ring topology, because it's a popular setup, and one that can very efficiently utilize network bandwidth.</p>
+<p>Of course, this looks simple, but how would we do it efficiently? That deepends on the network topology. We could have various topologies, such as a <a href="https://en.wikipedia.org/wiki/Fat_tree">fat tree</a>, <a href="https://en.wikipedia.org/wiki/Mesh_networking">mesh</a>, <a href="https://en.wikipedia.org/wiki/Ring_network">ring</a>, etc. Here, we will focus on a ring topology. I will shortly explain why that's a good choice for allreduce. Note that the topology of the reduction can be a ring, but the topology of the network can be more arbitrary, as we'll see shortly.</p>
 <h3>Communication on a ring</h3>
 <p>In a ring, each device has 2 neighbors - let's call them left and right neighbors. A device can only send data directly to its neighbors, otherwise it needs to make several hops.</p>
 <p align="center">
