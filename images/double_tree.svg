@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html class="client-nojs" lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8"/>
+<title>Two-tree broadcast - Wikipedia</title>
+<script>document.documentElement.className="client-js";RLCONF={"wgCanonicalNamespace":"","wgCanonicalSpecialPageName":!1,"wgNamespaceNumber":0,"wgPageName":"Two-tree_broadcast","wgTitle":"Two-tree broadcast","wgCurRevisionId":914437897,"wgRevisionId":914437897,"wgArticleId":56956816,"wgIsArticle":!0,"wgIsRedirect":!1,"wgAction":"view","wgUserName":null,"wgUserGroups":["*"],"wgCategories":["Networking algorithms","Distributed algorithms"],"wgBreakFrames":!1,"wgPageContentLanguage":"en","wgPageContentModel":"wikitext","wgSeparatorTransformTable":["",""],"wgDigitTransformTable":["",""],"wgDefaultDateFormat":"dmy","wgMonthNames":["","January","February","March","April","May","June","July","August","September","October","November","December"],"wgMonthNamesShort":["","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],"wgRelevantPageName":"Two-tree_broadcast","wgRelevantArticleId":56956816,"wgRequestId":"XYPxGgpAICEAAILNBC4AAABY","wgCSPNonce":!1,
+"wgIsProbablyEditable":!0,"wgRelevantPageIsProbablyEditable":!0,"wgRestrictionEdit":[],"wgRestrictionMove":[],"wgMediaViewerOnClick":!0,"wgMediaViewerEnabledByDefault":!0,"wgPopupsReferencePreviews":!1,"wgPopupsConflictsWithNavPopupGadget":!1,"wgVisualEditor":{"pageLanguageCode":"en","pageLanguageDir":"ltr","pageVariantFallbacks":"en"},"wgMFDisplayWikibaseDescriptions":{"search":!0,"nearby":!0,"watchlist":!0,"tagline":!1},"wgWMESchemaEditAttemptStepOversample":!1,"wgPoweredByHHVM":!0,"wgULSCurrentAutonym":"English","wgNoticeProject":"wikipedia","wgWikibaseItemId":"Q55636350","wgCentralAuthMobileDomain":!1,"wgEditSubmitButtonLabelPublish":!0};RLSTATE={"ext.gadget.charinsert-styles":"ready","ext.globalCssJs.user.styles":"ready","site.styles":"ready","noscript":"ready","user.styles":"ready","ext.globalCssJs.user":"ready","user":"ready","user.options":"ready","user.tokens":"loading","ext.cite.styles":"ready","ext.math.styles":"ready",
+"mediawiki.legacy.shared":"ready","mediawiki.legacy.commonPrint":"ready","mediawiki.toc.styles":"ready","wikibase.client.init":"ready","ext.visualEditor.desktopArticleTarget.noscript":"ready","ext.uls.interlanguage":"ready","ext.wikimediaBadges":"ready","ext.3d.styles":"ready","mediawiki.skinning.interface":"ready","skins.vector.styles":"ready"};RLPAGEMODULES=["ext.cite.ux-enhancements","ext.math.scripts","site","mediawiki.page.startup","mediawiki.page.ready","mediawiki.toc","mediawiki.searchSuggest","ext.gadget.teahouse","ext.gadget.ReferenceTooltips","ext.gadget.watchlist-notice","ext.gadget.DRN-wizard","ext.gadget.charinsert","ext.gadget.refToolbar","ext.gadget.extra-toolbar-buttons","ext.gadget.switcher","ext.centralauth.centralautologin","mmv.head","mmv.bootstrap.autostart","ext.popups","ext.visualEditor.desktopArticleTarget.init","ext.visualEditor.targetLoader","ext.eventLogging","ext.wikimediaEvents","ext.navigationTiming","ext.uls.compactlinks","ext.uls.interface",
+"ext.cx.eventlogging.campaigns","ext.quicksurveys.init","ext.centralNotice.geoIP","ext.centralNotice.startUp","skins.vector.js"];</script>
+<script>(RLQ=window.RLQ||[]).push(function(){mw.loader.implement("user.tokens@tffin",function($,jQuery,require,module){/*@nomin*/mw.user.tokens.set({"editToken":"+\\","patrolToken":"+\\","watchToken":"+\\","csrfToken":"+\\"});
+});});</script>
+<link rel="stylesheet" href="/w/load.php?lang=en&amp;modules=ext.3d.styles%7Cext.cite.styles%7Cext.math.styles%7Cext.uls.interlanguage%7Cext.visualEditor.desktopArticleTarget.noscript%7Cext.wikimediaBadges%7Cmediawiki.legacy.commonPrint%2Cshared%7Cmediawiki.skinning.interface%7Cmediawiki.toc.styles%7Cskins.vector.styles%7Cwikibase.client.init&amp;only=styles&amp;skin=vector"/>
+<script async="" src="/w/load.php?lang=en&amp;modules=startup&amp;only=scripts&amp;raw=1&amp;skin=vector"></script>
+<meta name="ResourceLoaderDynamicStyles" content=""/>
+<link rel="stylesheet" href="/w/load.php?lang=en&amp;modules=ext.gadget.charinsert-styles&amp;only=styles&amp;skin=vector"/>
+<link rel="stylesheet" href="/w/load.php?lang=en&amp;modules=site.styles&amp;only=styles&amp;skin=vector"/>
+<meta name="generator" content="MediaWiki 1.34.0-wmf.23"/>
+<meta name="referrer" content="origin"/>
+<meta name="referrer" content="origin-when-crossorigin"/>
+<meta name="referrer" content="origin-when-cross-origin"/>
+<link rel="alternate" href="android-app://org.wikipedia/http/en.m.wikipedia.org/wiki/Two-tree_broadcast"/>
+<link rel="alternate" type="application/x-wiki" title="Edit this page" href="/w/index.php?title=Two-tree_broadcast&amp;action=edit"/>
+<link rel="edit" title="Edit this page" href="/w/index.php?title=Two-tree_broadcast&amp;action=edit"/>
+<link rel="apple-touch-icon" href="/static/apple-touch/wikipedia.png"/>
+<link rel="shortcut icon" href="/static/favicon/wikipedia.ico"/>
+<link rel="search" type="application/opensearchdescription+xml" href="/w/opensearch_desc.php" title="Wikipedia (en)"/>
+<link rel="EditURI" type="application/rsd+xml" href="//en.wikipedia.org/w/api.php?action=rsd"/>
+<link rel="license" href="//creativecommons.org/licenses/by-sa/3.0/"/>
+<link rel="canonical" href="https://en.wikipedia.org/wiki/Two-tree_broadcast"/>
+<link rel="dns-prefetch" href="//login.wikimedia.org"/>
+<link rel="dns-prefetch" href="//meta.wikimedia.org" />
+<!--[if lt IE 9]><script src="/w/resources/lib/html5shiv/html5shiv.js"></script><![endif]-->
+</head>
+<body class="mediawiki ltr sitedir-ltr mw-hide-empty-elt ns-0 ns-subject mw-editable page-Two-tree_broadcast rootpage-Two-tree_broadcast skin-vector action-view">
+<div id="mw-page-base" class="noprint"></div>
+<div id="mw-head-base" class="noprint"></div>
+<div id="content" class="mw-body" role="main">
+	<a id="top"></a>
+	<div id="siteNotice" class="mw-body-content"><!-- CentralNotice --></div>
+	<div class="mw-indicators mw-body-content">
+</div>
+
+	<h1 id="firstHeading" class="firstHeading" lang="en">Two-tree broadcast</h1>
+	
+	<div id="bodyContent" class="mw-body-content">
+		<div id="siteSub" class="noprint">From Wikipedia, the free encyclopedia</div>
+		<div id="contentSub"></div>
+		
+		
+		
+		<div id="jump-to-nav"></div>
+		<a class="mw-jump-link" href="#mw-head">Jump to navigation</a>
+		<a class="mw-jump-link" href="#p-search">Jump to search</a>
+		<div id="mw-content-text" lang="en" dir="ltr" class="mw-content-ltr"><div class="mw-parser-output"><p>The <b>two-tree broadcast</b> (abbreviated <b>2tree-broadcast</b> or <b>23-broadcast</b>) is an algorithm that implements a <a href="/wiki/Broadcasting_(networking)" title="Broadcasting (networking)">broadcast</a> communication pattern on a <a href="/wiki/Distributed_computing" title="Distributed computing">distributed system</a> using <a href="/wiki/Message_passing" title="Message passing">message passing</a>.
+A broadcast is a commonly used <a href="/wiki/Message_Passing_Interface#Collective_basics" title="Message Passing Interface">collective operation</a> that sends data from one processor to all other processors.
+The two-tree broadcast communicates concurrently over two binary trees that span all processors. This achieves full usage of the bandwidth in the <a href="/wiki/Duplex_(telecommunications)#Full_duplex" title="Duplex (telecommunications)">full-duplex</a> communication model while having a startup latency logarithmic in the number of partaking processors.<sup id="cite_ref-SandersSpeck2009_1-0" class="reference"><a href="#cite_note-SandersSpeck2009-1">&#91;1&#93;</a></sup>
+The algorithm can also be adapted to perform a <a href="/wiki/Fold_(higher-order_function)" title="Fold (higher-order function)">reduction</a> or <a href="/wiki/Prefix_sum" title="Prefix sum">prefix sum</a>.
+</p>
+<div id="toc" class="toc"><input type="checkbox" role="button" id="toctogglecheckbox" class="toctogglecheckbox" style="display:none" /><div class="toctitle" lang="en" dir="ltr"><h2>Contents</h2><span class="toctogglespan"><label class="toctogglelabel" for="toctogglecheckbox"></label></span></div>
+<ul>
+<li class="toclevel-1 tocsection-1"><a href="#Algorithm"><span class="tocnumber">1</span> <span class="toctext">Algorithm</span></a></li>
+<li class="toclevel-1 tocsection-2"><a href="#Analysis"><span class="tocnumber">2</span> <span class="toctext">Analysis</span></a>
+<ul>
+<li class="toclevel-2 tocsection-3"><a href="#Construction_of_the_trees"><span class="tocnumber">2.1</span> <span class="toctext">Construction of the trees</span></a></li>
+<li class="toclevel-2 tocsection-4"><a href="#Communication_Time"><span class="tocnumber">2.2</span> <span class="toctext">Communication Time</span></a></li>
+</ul>
+</li>
+<li class="toclevel-1 tocsection-5"><a href="#Comparison_to_similar_algorithms"><span class="tocnumber">3</span> <span class="toctext">Comparison to similar algorithms</span></a></li>
+<li class="toclevel-1 tocsection-6"><a href="#Usage_for_other_communication_primitives"><span class="tocnumber">4</span> <span class="toctext">Usage for other communication primitives</span></a>
+<ul>
+<li class="toclevel-2 tocsection-7"><a href="#Reduction"><span class="tocnumber">4.1</span> <span class="toctext">Reduction</span></a></li>
+<li class="toclevel-2 tocsection-8"><a href="#Prefix_sum"><span class="tocnumber">4.2</span> <span class="toctext">Prefix sum</span></a></li>
+</ul>
+</li>
+<li class="toclevel-1 tocsection-9"><a href="#ESBT_broadcast"><span class="tocnumber">5</span> <span class="toctext">ESBT broadcast</span></a></li>
+<li class="toclevel-1 tocsection-10"><a href="#References"><span class="tocnumber">6</span> <span class="toctext">References</span></a></li>
+</ul>
+</div>
+
+<h2><span class="mw-headline" id="Algorithm">Algorithm</span><span class="mw-editsection"><span class="mw-editsection-bracket">[</span><a href="/w/index.php?title=Two-tree_broadcast&amp;action=edit&amp;section=1" title="Edit section: Algorithm">edit</a><span class="mw-editsection-bracket">]</span></span></h2>
+<p>A broadcast sends a message from a specified root processor to all other processors.
+<i>Binary tree broadcasting</i> uses a <a href="/wiki/Binary_tree" title="Binary tree">binary tree</a> to model the communication between the processors.
+Each processor corresponds to one node in the tree, and the root processor is the root of the tree.
+To broadcast a message <span class="texhtml"><i>M</i></span>, the root sends <span class="texhtml"><i>M</i></span> to its two children (child nodes). Each processor waits until it receives <span class="texhtml"><i>M</i></span> and then sends <span class="texhtml"><i>M</i></span> to its children. Because leaves have no children, they don't have to send any messages.
+The broadcasting process can be pipelined by splitting the message into <span class="texhtml"><i>k</i></span> blocks, which are then broadcast consecutively.
+In such a binary tree, the leaves of the tree only receive data, but never send any data themselves. If the communication is bidirectional (full-duplex), meaning each processor can send a message and receive a message at the same time, the leaves only use one half of the available bandwidth.
+</p>
+<div class="thumb tright"><div class="thumbinner" style="width:222px;"><a href="/wiki/File:Two-tree_Broadcast.svg" class="image"><img alt="" src="//upload.wikimedia.org/wikipedia/commons/thumb/9/95/Two-tree_Broadcast.svg/220px-Two-tree_Broadcast.svg.png" decoding="async" width="220" height="162" class="thumbimage" srcset="//upload.wikimedia.org/wikipedia/commons/thumb/9/95/Two-tree_Broadcast.svg/330px-Two-tree_Broadcast.svg.png 1.5x, //upload.wikimedia.org/wikipedia/commons/thumb/9/95/Two-tree_Broadcast.svg/440px-Two-tree_Broadcast.svg.png 2x" data-file-width="747" data-file-height="551" /></a>  <div class="thumbcaption"><div class="magnify"><a href="/wiki/File:Two-tree_Broadcast.svg" class="internal" title="Enlarge"></a></div>Two-tree broadcast with seven processors, including the edge coloring. <span class="texhtml"><i>T</i><sub>1</sub></span> in red, <span class="texhtml"><i>T</i><sub>2</sub></span> in blue. The last processor is the root.</div></div></div>
+<p>The idea of the two-tree broadcast is to use two binary trees <span class="texhtml"><i>T</i><sub>1</sub></span> and <span class="texhtml"><i>T</i><sub>2</sub></span> and communicate on both concurrently.<sup id="cite_ref-SandersSpeck2009_1-1" class="reference"><a href="#cite_note-SandersSpeck2009-1">&#91;1&#93;</a></sup>
+The trees are constructed so that the interior nodes of one tree correspond to leaf nodes of the other tree.
+The data that has to be broadcast is split into blocks of equal size.
+In each step of the algorithm, each processor receives one block and sends the previous block to one of its children in the tree in which it is an interior node.
+A schedule is needed so that no processor has to send or receive two messages in the same step.
+To create such a schedule, the edges of both trees are colored with 0 and 1 such that
+</p>
+<ul><li>no processor is connected to its parent nodes in <span class="texhtml"><i>T</i><sub>1</sub></span> and <span class="texhtml"><i>T</i><sub>2</sub></span> using edges of the same color</li>
+<li>no processor is connected to its children nodes in <span class="texhtml"><i>T</i><sub>1</sub></span> or <span class="texhtml"><i>T</i><sub>2</sub></span> using edges of the same color.</li></ul>
+<p>Edges with color 0 are used in even steps, edges with color 1 are used in odd steps.
+This schedule allows each processor to send one message and receive one message in each step, fully utilizing the available bandwidth.<sup id="cite_ref-SandersSpeck2009_1-2" class="reference"><a href="#cite_note-SandersSpeck2009-1">&#91;1&#93;</a></sup><br />
+Assume that processor <span class="texhtml"><i>i</i></span> wants to broadcast a message. The two trees are constructed for the remaining processors. Processor <span class="texhtml"><i>i</i></span> sends blocks alternating to the roots of the two trees, so each tree broadcasts one half of the message.
+</p>
+<h2><span class="mw-headline" id="Analysis">Analysis</span><span class="mw-editsection"><span class="mw-editsection-bracket">[</span><a href="/w/index.php?title=Two-tree_broadcast&amp;action=edit&amp;section=2" title="Edit section: Analysis">edit</a><span class="mw-editsection-bracket">]</span></span></h2>
+<p>Let <span class="texhtml"><i>p</i></span> be the number of processors, numbered from <span class="texhtml">0</span> to <span class="texhtml"><i>p</i> - 1</span>.
+</p>
+<h3><span class="mw-headline" id="Construction_of_the_trees">Construction of the trees</span><span class="mw-editsection"><span class="mw-editsection-bracket">[</span><a href="/w/index.php?title=Two-tree_broadcast&amp;action=edit&amp;section=3" title="Edit section: Construction of the trees">edit</a><span class="mw-editsection-bracket">]</span></span></h3>
+<div class="thumb tright"><div class="thumbinner" style="width:222px;"><a href="/wiki/File:Two-trees.svg" class="image"><img alt="" src="//upload.wikimedia.org/wikipedia/commons/thumb/a/a0/Two-trees.svg/220px-Two-trees.svg.png" decoding="async" width="220" height="149" class="thumbimage" srcset="//upload.wikimedia.org/wikipedia/commons/thumb/a/a0/Two-trees.svg/330px-Two-trees.svg.png 1.5x, //upload.wikimedia.org/wikipedia/commons/thumb/a/a0/Two-trees.svg/440px-Two-trees.svg.png 2x" data-file-width="1010" data-file-height="682" /></a>  <div class="thumbcaption"><div class="magnify"><a href="/wiki/File:Two-trees.svg" class="internal" title="Enlarge"></a></div>Two-trees of size 6, 12, 7, 9 using mirroring (top) and shifting (bottom). <span class="texhtml"><i>T</i><sub>1</sub></span> in red, <span class="texhtml"><i>T</i><sub>2</sub></span> in blue.</div></div></div>
+<p>Let <span class="texhtml"><i>h</i> = &#8968;log(<i>p</i> + 2)&#8969;</span>.
+<span class="texhtml"><i>T</i><sub>1</sub></span> and <span class="texhtml"><i>T</i><sub>2</sub></span> can be constructed as trees of height <span class="texhtml"><i>h</i> - 1</span>, such that both trees form an <a href="/wiki/Tree_traversal#In-order" title="Tree traversal">in-order</a> numbering of the processors, with the following method:<sup id="cite_ref-SandersSpeck2009_1-3" class="reference"><a href="#cite_note-SandersSpeck2009-1">&#91;1&#93;</a></sup><br />
+<span class="texhtml"><i><b>T</b></i><sub>1</sub></span>: If <span class="texhtml"><i>p</i> = 2<sup><i>h</i></sup> - 2</span>, <span class="texhtml"><i>T</i><sub>1</sub></span> is a complete binary tree of height <span class="texhtml"><i>h</i> - 1</span> except that the rightmost leaf is missing. Otherwise,  <span class="texhtml"><i>T</i><sub>1</sub></span> consists of a complete binary tree of height  <span class="texhtml"><i>h</i> - 2</span> covering PEs <span class="texhtml">[0, 2<sup><i>h-1</i></sup> - 2]</span>, a recursively constructed tree covering PEs <span class="texhtml">[2<sup><i>h-1</i></sup>, <i>p</i> - 1]</span>, and a root at PE  <span class="texhtml">2<sup><i>h-1</i></sup> - 1</span> whose children are the roots of the left and the right subtree.<br />
+<span class="texhtml"><i><b>T</b></i><sub>2</sub></span>: There are two ways to construct <span class="texhtml"><i>T</i><sub>2</sub></span>.
+With <i>shifting</i>, <span class="texhtml"><i>T</i><sub>2</sub></span> is first constructed like <span class="texhtml"><i>T</i><sub>1</sub></span>, except that it contains an additional processor. Then <span class="texhtml"><i>T</i><sub>2</sub></span> is shifted by one position to the left and the leftmost leaf is removed.
+With <i>mirroring</i>, <span class="texhtml"><i>T</i><sub>2</sub></span> is the mirror image of <span class="texhtml"><i>T</i><sub>1</sub></span> (with the mirror axis between processors <span class="texhtml"><span role="math" class="sfrac nowrap tion" style="display:inline-block; vertical-align:-0.5em; font-size:85%; text-align:center;"><span class="num" style="display:block; line-height:1em; margin:0 0.1em;"><i>p</i></span><span class="slash visualhide">/</span><span class="den" style="display:block; line-height:1em; margin:0 0.1em; border-top:1px solid;">2</span></span>-1</span> and <span class="texhtml"><span role="math" class="sfrac nowrap tion" style="display:inline-block; vertical-align:-0.5em; font-size:85%; text-align:center;"><span class="num" style="display:block; line-height:1em; margin:0 0.1em;"><i>p</i></span><span class="slash visualhide">/</span><span class="den" style="display:block; line-height:1em; margin:0 0.1em; border-top:1px solid;">2</span></span></span>). Mirroring only works for even <span class="texhtml"><i>p</i></span>.
+</p><p>It can be proven that a coloring with the desired properties exists for all <span class="texhtml"><i>p</i></span>.<sup id="cite_ref-SandersSpeck2009_1-4" class="reference"><a href="#cite_note-SandersSpeck2009-1">&#91;1&#93;</a></sup>
+When mirroring is used to construct <span class="texhtml"><i>T</i><sub>2</sub></span>, each processor can independently compute the color of its incident edges in <span class="texhtml"><i>O</i>(log <i>p</i>)</span> time.<sup id="cite_ref-SandersSpeck2009_1-5" class="reference"><a href="#cite_note-SandersSpeck2009-1">&#91;1&#93;</a></sup>
+</p>
+<h3><span class="mw-headline" id="Communication_Time">Communication Time</span><span class="mw-editsection"><span class="mw-editsection-bracket">[</span><a href="/w/index.php?title=Two-tree_broadcast&amp;action=edit&amp;section=4" title="Edit section: Communication Time">edit</a><span class="mw-editsection-bracket">]</span></span></h3>
+<p>For this analysis, the following communication model is used: A message of size <span class="texhtml"><i>n</i></span> has a communication time of  <span class="texhtml"><i>&#945;</i> + <i>&#946;n</i></span>, independent on which processors communicate. <span class="texhtml"><i>&#945;</i></span> represents the startup overhead to send the message, <span class="texhtml"><i>&#946;</i></span> represents the transmission time per data element.<sup id="cite_ref-Hockney1994_2-0" class="reference"><a href="#cite_note-Hockney1994-2">&#91;2&#93;</a></sup>
+</p><p>Suppose the message of size <span class="texhtml"><i>m</i></span> is split into <span class="texhtml">2<i>k</i></span> blocks. Each communication step takes time <span class="texhtml"><i>&#945;</i> + <i>&#946;</i><span role="math" class="sfrac nowrap tion" style="display:inline-block; vertical-align:-0.5em; font-size:85%; text-align:center;"><span class="num" style="display:block; line-height:1em; margin:0 0.1em;"><i>m</i></span><span class="slash visualhide">/</span><span class="den" style="display:block; line-height:1em; margin:0 0.1em; border-top:1px solid;">2<i>k</i></span></span></span>.
+Let <span class="texhtml"><i>h</i>=log <i>p</i></span> be the height of the communication structure with the root at processor <span class="texhtml"><i>i</i></span> and the two trees below it. 
+After <span class="texhtml">2<i>h</i></span> steps, the first data block has reached every node in both trees. Afterwards, each processor receives one block in every step until it received all blocks.
+The total number of steps is <span class="texhtml">2<i>h</i> + 2<i>k</i></span> resulting in a total communication time of <span class="texhtml">(2<i>h</i> + 2<i>k</i>)(<i>&#945;</i> + <i>&#946;</i><span role="math" class="sfrac nowrap tion" style="display:inline-block; vertical-align:-0.5em; font-size:85%; text-align:center;"><span class="num" style="display:block; line-height:1em; margin:0 0.1em;"><i>m</i></span><span class="slash visualhide">/</span><span class="den" style="display:block; line-height:1em; margin:0 0.1em; border-top:1px solid;">2<i>k</i></span></span>)</span>.
+Using an optimal <span class="texhtml"><i>k</i> = <i>k</i><sup>*</sup> = (<span role="math" class="sfrac nowrap tion" style="display:inline-block; vertical-align:-0.5em; font-size:85%; text-align:center;"><span class="num" style="display:block; line-height:1em; margin:0 0.1em;"><i>&#946;mh</i></span><span class="slash visualhide">/</span><span class="den" style="display:block; line-height:1em; margin:0 0.1em; border-top:1px solid;">2<i>&#945;</i></span></span>)<sup>&#189;</sup></span>, the total communication time is <span class="texhtml"><i>&#946;m</i> + 2<i>&#945;</i>log <i>p</i> + <span class="nowrap">&#8730;<span style="border-top:1px solid; padding:0 0.1em;">8<i>&#945;&#946;m</i>log <i>p</i></span></span></span>.
+</p>
+<h2><span class="mw-headline" id="Comparison_to_similar_algorithms">Comparison to similar algorithms</span><span class="mw-editsection"><span class="mw-editsection-bracket">[</span><a href="/w/index.php?title=Two-tree_broadcast&amp;action=edit&amp;section=5" title="Edit section: Comparison to similar algorithms">edit</a><span class="mw-editsection-bracket">]</span></span></h2>
+<p>In a <b>linear pipeline broadcast</b>, the message is split into <span class="texhtml"><i>k</i></span> blocks. In each step, each processor <span class="texhtml"><i>i</i></span> receives one block from the processor <span class="texhtml"><i>i</i>-1 (mod <i>p</i>)</span> and sends one block to the processor <span class="texhtml"><i>i</i>+1 (mod <i>p</i>)</span>.
+Linear pipeline has optimal throughput, but has a startup time in <span class="texhtml"><i>O</i>(<i>p</i>)</span>.<sup id="cite_ref-Pješivac-GrbovićAngskun2007_3-0" class="reference"><a href="#cite_note-Pješivac-GrbovićAngskun2007-3">&#91;3&#93;</a></sup>
+For large <span class="texhtml"><i>p</i></span>, the <span class="texhtml"><i>O</i>(log <i>p</i>)</span> startup latency of the two-tree broadcast is faster.
+Because both algorithms have optimal throughput, the two-tree algorithm is faster for a large numbers of processors.
+</p><p>A <b>binomial tree broadcast</b> communicates along a <a href="/wiki/Binomial_tree" class="mw-redirect" title="Binomial tree">binomial tree</a>. Each process receives the message that is broadcast (the root already has the message) and then sends the message to its children.
+A binomial tree broadcast has only half the startup time of the two-tree broadcast, but a factor of <span class="texhtml">log(<i>p</i>)</span> more communication.<sup id="cite_ref-ChanHeimlich2007_4-0" class="reference"><a href="#cite_note-ChanHeimlich2007-4">&#91;4&#93;</a></sup>
+The binomial tree broadcast is faster than the two-tree broadcast for small messages, but slower for large messages.
+</p>
+<div class="thumb tright"><div class="thumbinner" style="width:222px;"><a href="/wiki/File:Fibonacci_trees_1_to_5.svg" class="image"><img alt="" src="//upload.wikimedia.org/wikipedia/commons/thumb/9/9b/Fibonacci_trees_1_to_5.svg/220px-Fibonacci_trees_1_to_5.svg.png" decoding="async" width="220" height="72" class="thumbimage" srcset="//upload.wikimedia.org/wikipedia/commons/thumb/9/9b/Fibonacci_trees_1_to_5.svg/330px-Fibonacci_trees_1_to_5.svg.png 1.5x, //upload.wikimedia.org/wikipedia/commons/thumb/9/9b/Fibonacci_trees_1_to_5.svg/440px-Fibonacci_trees_1_to_5.svg.png 2x" data-file-width="1013" data-file-height="332" /></a>  <div class="thumbcaption"><div class="magnify"><a href="/wiki/File:Fibonacci_trees_1_to_5.svg" class="internal" title="Enlarge"></a></div>Fibonacci trees of height one to five</div></div></div> 
+<p>A <b>pipelined binary tree broadcast</b> splits the message into <span class="texhtml"><i>k</i></span> blocks and broadcasts the blocks consecutively over a binary tree.
+By using a <i>Fibonacci tree</i> instead of a simple <a href="/wiki/Binary_tree#Types_of_binary_trees" title="Binary tree">balanced binary tree</a>, the startup latency can be reduced to <span class="texhtml"><i>&#945;</i>log(<i>p</i>)</span>.
+<sup id="cite_ref-BruckCypher1992_5-0" class="reference"><a href="#cite_note-BruckCypher1992-5">&#91;5&#93;</a></sup>
+A Fibonacci tree of height <span class="texhtml"><i>h</i></span> consists of a root that has a Fibonacci tree of height <span class="texhtml"><i>h</i>-1</span> as its left child and a Fibonacci tree of <span class="texhtml"><i>h</i>-2</span> as its right child.
+The pipelined Fibonacci tree broadcast has half the startup latency of the two-tree broadcast, but also only half of the throughput.
+It is faster for small messages, while the two-tree broadcast is faster for large messages.
+</p>
+<h2><span class="mw-headline" id="Usage_for_other_communication_primitives">Usage for other communication primitives</span><span class="mw-editsection"><span class="mw-editsection-bracket">[</span><a href="/w/index.php?title=Two-tree_broadcast&amp;action=edit&amp;section=6" title="Edit section: Usage for other communication primitives">edit</a><span class="mw-editsection-bracket">]</span></span></h2>
+<h3><span class="mw-headline" id="Reduction">Reduction</span><span class="mw-editsection"><span class="mw-editsection-bracket">[</span><a href="/w/index.php?title=Two-tree_broadcast&amp;action=edit&amp;section=7" title="Edit section: Reduction">edit</a><span class="mw-editsection-bracket">]</span></span></h3>
+<div class="thumb tright"><div class="thumbinner" style="width:222px;"><a href="/wiki/File:Two-tree_reduce.svg" class="image"><img alt="" src="//upload.wikimedia.org/wikipedia/commons/thumb/e/e9/Two-tree_reduce.svg/220px-Two-tree_reduce.svg.png" decoding="async" width="220" height="162" class="thumbimage" srcset="//upload.wikimedia.org/wikipedia/commons/thumb/e/e9/Two-tree_reduce.svg/330px-Two-tree_reduce.svg.png 1.5x, //upload.wikimedia.org/wikipedia/commons/thumb/e/e9/Two-tree_reduce.svg/440px-Two-tree_reduce.svg.png 2x" data-file-width="747" data-file-height="551" /></a>  <div class="thumbcaption"><div class="magnify"><a href="/wiki/File:Two-tree_reduce.svg" class="internal" title="Enlarge"></a></div>Two-tree reduction with seven processors. The last processor is the root. <span class="texhtml"><i>T</i><sub>1</sub></span> in red, <span class="texhtml"><i>T</i><sub>2</sub></span> in blue.</div></div></div>
+<p>A reduction (<code>MPI_Reduce</code> in the <a href="/wiki/Message_Passing_Interface" title="Message Passing Interface">MPI standard</a>) computes <span class="mwe-math-element"><span class="mwe-math-mathml-inline mwe-math-mathml-a11y" style="display: none;"><math xmlns="http://www.w3.org/1998/Math/MathML"  alttext="{\displaystyle \bigoplus _{i=0}^{p-1}M_{i}}">
+  <semantics>
+    <mrow class="MJX-TeXAtom-ORD">
+      <mstyle displaystyle="true" scriptlevel="0">
+        <munderover>
+          <mo>&#x2A01;<!-- ⨁ --></mo>
+          <mrow class="MJX-TeXAtom-ORD">
+            <mi>i</mi>
+            <mo>=</mo>
+            <mn>0</mn>
+          </mrow>
+          <mrow class="MJX-TeXAtom-ORD">
+            <mi>p</mi>
+            <mo>&#x2212;<!-- − --></mo>
+            <mn>1</mn>
+          </mrow>
+        </munderover>
+        <msub>
+          <mi>M</mi>
+          <mrow class="MJX-TeXAtom-ORD">
+            <mi>i</mi>
+          </mrow>
+        </msub>
+      </mstyle>
+    </mrow>
+    <annotation encoding="application/x-tex">{\displaystyle \bigoplus _{i=0}^{p-1}M_{i}}</annotation>
+  </semantics>
+</math></span><img src="https://wikimedia.org/api/rest_v1/media/math/render/svg/79a5fbb8839050a106ae02cd23bb517ec992349b" class="mwe-math-fallback-image-inline" aria-hidden="true" style="vertical-align: -3.005ex; width:6.951ex; height:7.343ex;" alt="{\displaystyle \bigoplus _{i=0}^{p-1}M_{i}}"/></span> where <span class="texhtml"><i>M</i><sub><i>i</i></sub></span> is a vector of length <span class="texhtml"><i>m</i></span> originally
+available at processor <span class="texhtml"><i>i</i></span> and <span class="mwe-math-element"><span class="mwe-math-mathml-inline mwe-math-mathml-a11y" style="display: none;"><math xmlns="http://www.w3.org/1998/Math/MathML"  alttext="{\displaystyle \bigoplus }">
+  <semantics>
+    <mrow class="MJX-TeXAtom-ORD">
+      <mstyle displaystyle="true" scriptlevel="0">
+        <mo>&#x2A01;<!-- ⨁ --></mo>
+      </mstyle>
+    </mrow>
+    <annotation encoding="application/x-tex">{\displaystyle \bigoplus }</annotation>
+  </semantics>
+</math></span><img src="https://wikimedia.org/api/rest_v1/media/math/render/svg/2e792fa5b4c0c2f7e85bdd612f30ac7937f59f3b" class="mwe-math-fallback-image-inline" aria-hidden="true" style="vertical-align: -1.338ex; width:3.511ex; height:3.843ex;" alt="{\displaystyle \bigoplus }"/></span> is a binary operation that is associative, but not necessarily commutative.
+The result is stored at a specified root processor <span class="texhtml"><i>r</i></span>.
+</p><p>Assume that <span class="texhtml"><i>r</i> = 0</span> or <span class="texhtml"><i>r</i> = <i>p</i>-1</span>. 
+In this case the communication is identical to the broadcast, except that the communication direction is reversed.<sup id="cite_ref-SandersSpeck2009_1-6" class="reference"><a href="#cite_note-SandersSpeck2009-1">&#91;1&#93;</a></sup>
+Each process receives two blocks from its children, reduces them with its own block, and sends the result to its parent.
+The root takes turns receiving blocks from the roots of <span class="texhtml"><i>T</i><sub>1</sub></span> and <span class="texhtml"><i>T</i><sub>2</sub></span> and reduces them with its own data.
+The communication time is the same as for the Broadcast and the amount of data reduced per processor is <span class="texhtml">2<i>m</i></span>.<br />
+If the reduce operation is commutative, the result can be achieved for any root by renumbering the processors.<br />
+</p>
+<div class="thumb tright"><div class="thumbinner" style="width:222px;"><a href="/wiki/File:Two-tree_reduction.svg" class="image"><img alt="" src="//upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Two-tree_reduction.svg/220px-Two-tree_reduction.svg.png" decoding="async" width="220" height="86" class="thumbimage" srcset="//upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Two-tree_reduction.svg/330px-Two-tree_reduction.svg.png 1.5x, //upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Two-tree_reduction.svg/440px-Two-tree_reduction.svg.png 2x" data-file-width="1079" data-file-height="421" /></a>  <div class="thumbcaption"><div class="magnify"><a href="/wiki/File:Two-tree_reduction.svg" class="internal" title="Enlarge"></a></div>Two-tree reduction with 13 processors. The sixth processor (dark grey) is the root. <span class="texhtml"><i>T</i><sub>1</sub></span>s in red, <span class="texhtml"><i>T</i><sub>2</sub></span>s in blue.</div></div></div>
+<p>If the operation is not commutative and the root is not <span class="texhtml">0</span> or <span class="texhtml"><i>p</i>-1</span>, then <span class="texhtml">2<i>&#946;m</i></span> is a lower bound for the communication time.<sup id="cite_ref-SandersSpeck2009_1-7" class="reference"><a href="#cite_note-SandersSpeck2009-1">&#91;1&#93;</a></sup>
+In this case, the remaining processors are split into two subgroups. The processors <span class="texhtml">&lt;<i>r</i></span> perform a reduction to the root <span class="texhtml"><i>r</i>-1</span> and the processors <span class="texhtml">&gt;<i>r</i></span> perform a reduction to the root <span class="texhtml"><i>r</i>+1</span>. Processor <span class="texhtml"><i>r</i></span> receives blocks alternating from the two roots of the subgroups.
+</p>
+<h3><span class="mw-headline" id="Prefix_sum">Prefix sum</span><span class="mw-editsection"><span class="mw-editsection-bracket">[</span><a href="/w/index.php?title=Two-tree_broadcast&amp;action=edit&amp;section=8" title="Edit section: Prefix sum">edit</a><span class="mw-editsection-bracket">]</span></span></h3>
+<p>A prefix sum (<code>MPI_Scan</code>) computes <span class="mwe-math-element"><span class="mwe-math-mathml-inline mwe-math-mathml-a11y" style="display: none;"><math xmlns="http://www.w3.org/1998/Math/MathML"  alttext="{\displaystyle \bigoplus _{i=0}^{j}M_{i}}">
+  <semantics>
+    <mrow class="MJX-TeXAtom-ORD">
+      <mstyle displaystyle="true" scriptlevel="0">
+        <munderover>
+          <mo>&#x2A01;<!-- ⨁ --></mo>
+          <mrow class="MJX-TeXAtom-ORD">
+            <mi>i</mi>
+            <mo>=</mo>
+            <mn>0</mn>
+          </mrow>
+          <mrow class="MJX-TeXAtom-ORD">
+            <mi>j</mi>
+          </mrow>
+        </munderover>
+        <msub>
+          <mi>M</mi>
+          <mrow class="MJX-TeXAtom-ORD">
+            <mi>i</mi>
+          </mrow>
+        </msub>
+      </mstyle>
+    </mrow>
+    <annotation encoding="application/x-tex">{\displaystyle \bigoplus _{i=0}^{j}M_{i}}</annotation>
+  </semantics>
+</math></span><img src="https://wikimedia.org/api/rest_v1/media/math/render/svg/d0b5a3eda9e95a01bee259239f91702829e2cd71" class="mwe-math-fallback-image-inline" aria-hidden="true" style="vertical-align: -3.005ex; width:6.951ex; height:7.343ex;" alt="{\displaystyle \bigoplus _{i=0}^{j}M_{i}}"/></span> for each
+processor <span class="texhtml"><i>j</i></span>  where <span class="texhtml"><i>M</i><sub><i>i</i></sub></span> is a vector of length <span class="texhtml"><i>m</i></span> originally
+available at processor <span class="texhtml"><i>i</i></span> and <span class="mwe-math-element"><span class="mwe-math-mathml-inline mwe-math-mathml-a11y" style="display: none;"><math xmlns="http://www.w3.org/1998/Math/MathML"  alttext="{\displaystyle \bigoplus }">
+  <semantics>
+    <mrow class="MJX-TeXAtom-ORD">
+      <mstyle displaystyle="true" scriptlevel="0">
+        <mo>&#x2A01;<!-- ⨁ --></mo>
+      </mstyle>
+    </mrow>
+    <annotation encoding="application/x-tex">{\displaystyle \bigoplus }</annotation>
+  </semantics>
+</math></span><img src="https://wikimedia.org/api/rest_v1/media/math/render/svg/2e792fa5b4c0c2f7e85bdd612f30ac7937f59f3b" class="mwe-math-fallback-image-inline" aria-hidden="true" style="vertical-align: -1.338ex; width:3.511ex; height:3.843ex;" alt="{\displaystyle \bigoplus }"/></span> is a binary associative operation.
+Using an inorder binary tree, a prefix sum can be computed by first performing an up-phase in which each interior node computes a partial sum
+<span class="mwe-math-element"><span class="mwe-math-mathml-inline mwe-math-mathml-a11y" style="display: none;"><math xmlns="http://www.w3.org/1998/Math/MathML"  alttext="{\displaystyle \bigoplus _{i=l}^{r}M_{i}}">
+  <semantics>
+    <mrow class="MJX-TeXAtom-ORD">
+      <mstyle displaystyle="true" scriptlevel="0">
+        <munderover>
+          <mo>&#x2A01;<!-- ⨁ --></mo>
+          <mrow class="MJX-TeXAtom-ORD">
+            <mi>i</mi>
+            <mo>=</mo>
+            <mi>l</mi>
+          </mrow>
+          <mrow class="MJX-TeXAtom-ORD">
+            <mi>r</mi>
+          </mrow>
+        </munderover>
+        <msub>
+          <mi>M</mi>
+          <mrow class="MJX-TeXAtom-ORD">
+            <mi>i</mi>
+          </mrow>
+        </msub>
+      </mstyle>
+    </mrow>
+    <annotation encoding="application/x-tex">{\displaystyle \bigoplus _{i=l}^{r}M_{i}}</annotation>
+  </semantics>
+</math></span><img src="https://wikimedia.org/api/rest_v1/media/math/render/svg/7475a1f62875113c6a15c3e6d2aaccdbb643fe4f" class="mwe-math-fallback-image-inline" aria-hidden="true" style="vertical-align: -3.005ex; width:6.951ex; height:6.843ex;" alt="{\displaystyle \bigoplus _{i=l}^{r}M_{i}}"/></span> for left- and rightmost leaves <span class="texhtml"><i>l</i></span> and <span class="texhtml"><i>r</i></span>, 
+followed by a down-phase in which prefixes of the form <span class="mwe-math-element"><span class="mwe-math-mathml-inline mwe-math-mathml-a11y" style="display: none;"><math xmlns="http://www.w3.org/1998/Math/MathML"  alttext="{\displaystyle \bigoplus _{i=0}^{l-1}M_{i}}">
+  <semantics>
+    <mrow class="MJX-TeXAtom-ORD">
+      <mstyle displaystyle="true" scriptlevel="0">
+        <munderover>
+          <mo>&#x2A01;<!-- ⨁ --></mo>
+          <mrow class="MJX-TeXAtom-ORD">
+            <mi>i</mi>
+            <mo>=</mo>
+            <mn>0</mn>
+          </mrow>
+          <mrow class="MJX-TeXAtom-ORD">
+            <mi>l</mi>
+            <mo>&#x2212;<!-- − --></mo>
+            <mn>1</mn>
+          </mrow>
+        </munderover>
+        <msub>
+          <mi>M</mi>
+          <mrow class="MJX-TeXAtom-ORD">
+            <mi>i</mi>
+          </mrow>
+        </msub>
+      </mstyle>
+    </mrow>
+    <annotation encoding="application/x-tex">{\displaystyle \bigoplus _{i=0}^{l-1}M_{i}}</annotation>
+  </semantics>
+</math></span><img src="https://wikimedia.org/api/rest_v1/media/math/render/svg/45789f56f6aea37aaadd1315df06ebb04fc5ab8d" class="mwe-math-fallback-image-inline" aria-hidden="true" style="vertical-align: -3.005ex; width:6.951ex; height:7.343ex;" alt="{\displaystyle \bigoplus _{i=0}^{l-1}M_{i}}"/></span> are sent down the tree and allow each processor to
+finish computing its prefix sum.<sup id="cite_ref-SandersTräff2006_6-0" class="reference"><a href="#cite_note-SandersTräff2006-6">&#91;6&#93;</a></sup><sup id="cite_ref-SandersSpeck2009_1-8" class="reference"><a href="#cite_note-SandersSpeck2009-1">&#91;1&#93;</a></sup>
+The communication in the up-phase is equivalent to a reduction to processor <span class="texhtml">0</span> and the communication in the down-phase is equivalent to a broadcast from the processor <span class="texhtml">0</span>.
+The total communication time is about twice the communication time of the two-tree broadcast.<sup id="cite_ref-SandersSpeck2009_1-9" class="reference"><a href="#cite_note-SandersSpeck2009-1">&#91;1&#93;</a></sup>
+</p>
+<h2><span class="mw-headline" id="ESBT_broadcast">ESBT broadcast</span><span class="mw-editsection"><span class="mw-editsection-bracket">[</span><a href="/w/index.php?title=Two-tree_broadcast&amp;action=edit&amp;section=9" title="Edit section: ESBT broadcast">edit</a><span class="mw-editsection-bracket">]</span></span></h2>
+<div role="note" class="hatnote navigation-not-searchable">Further information: <a href="/w/index.php?title=ESBT_broadcast&amp;action=edit&amp;redlink=1" class="new" title="ESBT broadcast (page does not exist)">ESBT broadcast</a></div>
+<p>If <span class="texhtml"><i>p</i></span> is a power of two, there is an optimal broadcasting algorithm based on edge disjoint spanning binomial trees (ESBT) in a hypercube.<sup id="cite_ref-JohnssonHo1989_7-0" class="reference"><a href="#cite_note-JohnssonHo1989-7">&#91;7&#93;</a></sup>
+The hypercube, excluding the root <span class="texhtml">0<sup><i>d</i></sup></span>, is split into <span class="texhtml">log <i>p</i></span> ESBTs.
+The algorithm uses pipelining by splitting the broadcast data into <span class="texhtml"><i>k</i></span> blocks.
+Processor <span class="texhtml">0<sup><i>d</i></sup></span> cyclically distributes blocks to the roots of the ESBTs and each ESBT performs a pipelined binary tree broadcast.
+In step <span class="texhtml"><i>i</i></span>, each processor sends and receives one message along dimension <span class="texhtml"><i>i</i> mod <i>d</i></span>.
+The communication time of the algorithm is  <span class="texhtml"><i>&#946;m</i> + <i>&#945;</i>log <i>p</i> + <span class="nowrap">&#8730;<span style="border-top:1px solid; padding:0 0.1em;">4<i>&#945;&#946;m</i>log <i>p</i></span></span></span><sup id="cite_ref-JohnssonHo1989_7-1" class="reference"><a href="#cite_note-JohnssonHo1989-7">&#91;7&#93;</a></sup>, so the startup latency is only one half of the startup latency of the two-tree broadcast.
+<br />
+The drawback of the ESBT broadcast is that it does not work for other values of <span class="texhtml"><i>p</i></span> and it cannot be adapted for (non-commutative) reduction or prefix sum.
+</p>
+<h2><span class="mw-headline" id="References">References</span><span class="mw-editsection"><span class="mw-editsection-bracket">[</span><a href="/w/index.php?title=Two-tree_broadcast&amp;action=edit&amp;section=10" title="Edit section: References">edit</a><span class="mw-editsection-bracket">]</span></span></h2>
+<div class="reflist" style="list-style-type: decimal;">
+<div class="mw-references-wrap"><ol class="references">
+<li id="cite_note-SandersSpeck2009-1"><span class="mw-cite-backlink">^ <a href="#cite_ref-SandersSpeck2009_1-0"><sup><i><b>a</b></i></sup></a> <a href="#cite_ref-SandersSpeck2009_1-1"><sup><i><b>b</b></i></sup></a> <a href="#cite_ref-SandersSpeck2009_1-2"><sup><i><b>c</b></i></sup></a> <a href="#cite_ref-SandersSpeck2009_1-3"><sup><i><b>d</b></i></sup></a> <a href="#cite_ref-SandersSpeck2009_1-4"><sup><i><b>e</b></i></sup></a> <a href="#cite_ref-SandersSpeck2009_1-5"><sup><i><b>f</b></i></sup></a> <a href="#cite_ref-SandersSpeck2009_1-6"><sup><i><b>g</b></i></sup></a> <a href="#cite_ref-SandersSpeck2009_1-7"><sup><i><b>h</b></i></sup></a> <a href="#cite_ref-SandersSpeck2009_1-8"><sup><i><b>i</b></i></sup></a> <a href="#cite_ref-SandersSpeck2009_1-9"><sup><i><b>j</b></i></sup></a></span> <span class="reference-text"><cite class="citation journal">Sanders, Peter; Speck, Jochen; Träff, Jesper Larsson (2009). "Two-tree algorithms for full bandwidth broadcast, reduction and scan". <i>Parallel Computing</i>. <b>35</b> (12): 581–594. <a href="/wiki/Digital_object_identifier" title="Digital object identifier">doi</a>:<a rel="nofollow" class="external text" href="//doi.org/10.1016%2Fj.parco.2009.09.001">10.1016/j.parco.2009.09.001</a>. <a href="/wiki/International_Standard_Serial_Number" title="International Standard Serial Number">ISSN</a>&#160;<a rel="nofollow" class="external text" href="//www.worldcat.org/issn/0167-8191">0167-8191</a>.</cite><span title="ctx_ver=Z39.88-2004&amp;rft_val_fmt=info%3Aofi%2Ffmt%3Akev%3Amtx%3Ajournal&amp;rft.genre=article&amp;rft.jtitle=Parallel+Computing&amp;rft.atitle=Two-tree+algorithms+for+full+bandwidth+broadcast%2C+reduction+and+scan&amp;rft.volume=35&amp;rft.issue=12&amp;rft.pages=581-594&amp;rft.date=2009&amp;rft_id=info%3Adoi%2F10.1016%2Fj.parco.2009.09.001&amp;rft.issn=01678191&amp;rft.aulast=Sanders&amp;rft.aufirst=Peter&amp;rft.au=Speck%2C+Jochen&amp;rft.au=Tr%C3%A4ff%2C+Jesper+Larsson&amp;rfr_id=info%3Asid%2Fen.wikipedia.org%3ATwo-tree+broadcast" class="Z3988"></span><style data-mw-deduplicate="TemplateStyles:r886058088">.mw-parser-output cite.citation{font-style:inherit}.mw-parser-output .citation q{quotes:"\"""\"""'""'"}.mw-parser-output .citation .cs1-lock-free a{background:url("//upload.wikimedia.org/wikipedia/commons/thumb/6/65/Lock-green.svg/9px-Lock-green.svg.png")no-repeat;background-position:right .1em center}.mw-parser-output .citation .cs1-lock-limited a,.mw-parser-output .citation .cs1-lock-registration a{background:url("//upload.wikimedia.org/wikipedia/commons/thumb/d/d6/Lock-gray-alt-2.svg/9px-Lock-gray-alt-2.svg.png")no-repeat;background-position:right .1em center}.mw-parser-output .citation .cs1-lock-subscription a{background:url("//upload.wikimedia.org/wikipedia/commons/thumb/a/aa/Lock-red-alt-2.svg/9px-Lock-red-alt-2.svg.png")no-repeat;background-position:right .1em center}.mw-parser-output .cs1-subscription,.mw-parser-output .cs1-registration{color:#555}.mw-parser-output .cs1-subscription span,.mw-parser-output .cs1-registration span{border-bottom:1px dotted;cursor:help}.mw-parser-output .cs1-ws-icon a{background:url("//upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Wikisource-logo.svg/12px-Wikisource-logo.svg.png")no-repeat;background-position:right .1em center}.mw-parser-output code.cs1-code{color:inherit;background:inherit;border:inherit;padding:inherit}.mw-parser-output .cs1-hidden-error{display:none;font-size:100%}.mw-parser-output .cs1-visible-error{font-size:100%}.mw-parser-output .cs1-maint{display:none;color:#33aa33;margin-left:0.3em}.mw-parser-output .cs1-subscription,.mw-parser-output .cs1-registration,.mw-parser-output .cs1-format{font-size:95%}.mw-parser-output .cs1-kern-left,.mw-parser-output .cs1-kern-wl-left{padding-left:0.2em}.mw-parser-output .cs1-kern-right,.mw-parser-output .cs1-kern-wl-right{padding-right:0.2em}</style></span>
+</li>
+<li id="cite_note-Hockney1994-2"><span class="mw-cite-backlink"><b><a href="#cite_ref-Hockney1994_2-0">^</a></b></span> <span class="reference-text"><cite class="citation journal">Hockney, Roger W. (1994). "The communication challenge for MPP: Intel Paragon and Meiko CS-2". <i>Parallel Computing</i>. <b>20</b> (3): 389–398. <a href="/wiki/Digital_object_identifier" title="Digital object identifier">doi</a>:<a rel="nofollow" class="external text" href="//doi.org/10.1016%2FS0167-8191%2806%2980021-9">10.1016/S0167-8191(06)80021-9</a>. <a href="/wiki/International_Standard_Serial_Number" title="International Standard Serial Number">ISSN</a>&#160;<a rel="nofollow" class="external text" href="//www.worldcat.org/issn/0167-8191">0167-8191</a>.</cite><span title="ctx_ver=Z39.88-2004&amp;rft_val_fmt=info%3Aofi%2Ffmt%3Akev%3Amtx%3Ajournal&amp;rft.genre=article&amp;rft.jtitle=Parallel+Computing&amp;rft.atitle=The+communication+challenge+for+MPP%3A+Intel+Paragon+and+Meiko+CS-2&amp;rft.volume=20&amp;rft.issue=3&amp;rft.pages=389-398&amp;rft.date=1994&amp;rft_id=info%3Adoi%2F10.1016%2FS0167-8191%2806%2980021-9&amp;rft.issn=01678191&amp;rft.aulast=Hockney&amp;rft.aufirst=Roger+W.&amp;rfr_id=info%3Asid%2Fen.wikipedia.org%3ATwo-tree+broadcast" class="Z3988"></span><link rel="mw-deduplicated-inline-style" href="mw-data:TemplateStyles:r886058088"/></span>
+</li>
+<li id="cite_note-Pješivac-GrbovićAngskun2007-3"><span class="mw-cite-backlink"><b><a href="#cite_ref-Pješivac-GrbovićAngskun2007_3-0">^</a></b></span> <span class="reference-text"><cite class="citation journal">Pješivac-Grbović, Jelena; Angskun, Thara; Bosilca, George; Fagg, Graham E.; Gabriel, Edgar; Dongarra, Jack J. (2007). "Performance analysis of MPI collective operations". <i>Cluster Computing</i>. <b>10</b> (2): 127–143. <a href="/wiki/Digital_object_identifier" title="Digital object identifier">doi</a>:<a rel="nofollow" class="external text" href="//doi.org/10.1007%2Fs10586-007-0012-0">10.1007/s10586-007-0012-0</a>. <a href="/wiki/International_Standard_Serial_Number" title="International Standard Serial Number">ISSN</a>&#160;<a rel="nofollow" class="external text" href="//www.worldcat.org/issn/1386-7857">1386-7857</a>.</cite><span title="ctx_ver=Z39.88-2004&amp;rft_val_fmt=info%3Aofi%2Ffmt%3Akev%3Amtx%3Ajournal&amp;rft.genre=article&amp;rft.jtitle=Cluster+Computing&amp;rft.atitle=Performance+analysis+of+MPI+collective+operations&amp;rft.volume=10&amp;rft.issue=2&amp;rft.pages=127-143&amp;rft.date=2007&amp;rft_id=info%3Adoi%2F10.1007%2Fs10586-007-0012-0&amp;rft.issn=1386-7857&amp;rft.aulast=Pje%C5%A1ivac-Grbovi%C4%87&amp;rft.aufirst=Jelena&amp;rft.au=Angskun%2C+Thara&amp;rft.au=Bosilca%2C+George&amp;rft.au=Fagg%2C+Graham+E.&amp;rft.au=Gabriel%2C+Edgar&amp;rft.au=Dongarra%2C+Jack+J.&amp;rfr_id=info%3Asid%2Fen.wikipedia.org%3ATwo-tree+broadcast" class="Z3988"></span><link rel="mw-deduplicated-inline-style" href="mw-data:TemplateStyles:r886058088"/></span>
+</li>
+<li id="cite_note-ChanHeimlich2007-4"><span class="mw-cite-backlink"><b><a href="#cite_ref-ChanHeimlich2007_4-0">^</a></b></span> <span class="reference-text"><cite class="citation journal">Chan, Ernie; Heimlich, Marcel; Purkayastha, Avi; Van De Geijn, Rober (2007). "Collective Communication: Theory, Practice, and Experience". <i>Concurrency and Computation: Practice and Experience</i>. <b>19</b> (13): 1749–1783. <a href="/wiki/Digital_object_identifier" title="Digital object identifier">doi</a>:<a rel="nofollow" class="external text" href="//doi.org/10.1002%2Fcpe.v19%3A13">10.1002/cpe.v19:13</a>. <a href="/wiki/International_Standard_Serial_Number" title="International Standard Serial Number">ISSN</a>&#160;<a rel="nofollow" class="external text" href="//www.worldcat.org/issn/1532-0626">1532-0626</a>.</cite><span title="ctx_ver=Z39.88-2004&amp;rft_val_fmt=info%3Aofi%2Ffmt%3Akev%3Amtx%3Ajournal&amp;rft.genre=article&amp;rft.jtitle=Concurrency+and+Computation%3A+Practice+and+Experience&amp;rft.atitle=Collective+Communication%3A+Theory%2C+Practice%2C+and+Experience&amp;rft.volume=19&amp;rft.issue=13&amp;rft.pages=1749-1783&amp;rft.date=2007&amp;rft_id=info%3Adoi%2F10.1002%2Fcpe.v19%3A13&amp;rft.issn=15320626&amp;rft.aulast=Chan&amp;rft.aufirst=Ernie&amp;rft.au=Heimlich%2C+Marcel&amp;rft.au=Purkayastha%2C+Avi&amp;rft.au=Van+De+Geijn%2C+Rober&amp;rfr_id=info%3Asid%2Fen.wikipedia.org%3ATwo-tree+broadcast" class="Z3988"></span><link rel="mw-deduplicated-inline-style" href="mw-data:TemplateStyles:r886058088"/></span>
+</li>
+<li id="cite_note-BruckCypher1992-5"><span class="mw-cite-backlink"><b><a href="#cite_ref-BruckCypher1992_5-0">^</a></b></span> <span class="reference-text"><cite class="citation book">Bruck, Jehoshua; Cypher, Robert; Ho, C-T (1992). <i>Multiple message broadcasting with generalized Fibonacci trees</i>. <i>Parallel and Distributed Processing, 1992. Proceedings of the Fourth IEEE Symposium on</i>. IEEE. pp.&#160;424–431. <a href="/wiki/Digital_object_identifier" title="Digital object identifier">doi</a>:<a rel="nofollow" class="external text" href="//doi.org/10.1109%2FSPDP.1992.242714">10.1109/SPDP.1992.242714</a>. <a href="/wiki/International_Standard_Book_Number" title="International Standard Book Number">ISBN</a>&#160;<a href="/wiki/Special:BookSources/978-0-8186-3200-6" title="Special:BookSources/978-0-8186-3200-6"><bdi>978-0-8186-3200-6</bdi></a>.</cite><span title="ctx_ver=Z39.88-2004&amp;rft_val_fmt=info%3Aofi%2Ffmt%3Akev%3Amtx%3Abook&amp;rft.genre=book&amp;rft.btitle=Multiple+message+broadcasting+with+generalized+Fibonacci+trees&amp;rft.pages=424-431&amp;rft.pub=IEEE&amp;rft.date=1992&amp;rft_id=info%3Adoi%2F10.1109%2FSPDP.1992.242714&amp;rft.isbn=978-0-8186-3200-6&amp;rft.aulast=Bruck&amp;rft.aufirst=Jehoshua&amp;rft.au=Cypher%2C+Robert&amp;rft.au=Ho%2C+C-T&amp;rfr_id=info%3Asid%2Fen.wikipedia.org%3ATwo-tree+broadcast" class="Z3988"></span><link rel="mw-deduplicated-inline-style" href="mw-data:TemplateStyles:r886058088"/></span>
+</li>
+<li id="cite_note-SandersTräff2006-6"><span class="mw-cite-backlink"><b><a href="#cite_ref-SandersTräff2006_6-0">^</a></b></span> <span class="reference-text"><cite class="citation book">Sanders, Peter; Träff, Jesper Larsson (2006). <i>Parallel Prefix (Scan) algorithms for MPI</i>. <i>European Parallel Virtual Machine/Message Passing Interface Users' Group Meeting</i>. Lecture Notes in Computer Science. <b>4192</b>. Springer. pp.&#160;49–57. <a href="/wiki/CiteSeerX" title="CiteSeerX">CiteSeerX</a>&#160;<span class="cs1-lock-free" title="Freely accessible"><a rel="nofollow" class="external text" href="//citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.495.5815">10.1.1.495.5815</a></span>. <a href="/wiki/Digital_object_identifier" title="Digital object identifier">doi</a>:<a rel="nofollow" class="external text" href="//doi.org/10.1007%2F11846802_15">10.1007/11846802_15</a>. <a href="/wiki/International_Standard_Book_Number" title="International Standard Book Number">ISBN</a>&#160;<a href="/wiki/Special:BookSources/978-3-540-39110-4" title="Special:BookSources/978-3-540-39110-4"><bdi>978-3-540-39110-4</bdi></a>. <a href="/wiki/International_Standard_Serial_Number" title="International Standard Serial Number">ISSN</a>&#160;<a rel="nofollow" class="external text" href="//www.worldcat.org/issn/0302-9743">0302-9743</a>.</cite><span title="ctx_ver=Z39.88-2004&amp;rft_val_fmt=info%3Aofi%2Ffmt%3Akev%3Amtx%3Abook&amp;rft.genre=book&amp;rft.btitle=Parallel+Prefix+%28Scan%29+algorithms+for+MPI&amp;rft.series=Lecture+Notes+in+Computer+Science&amp;rft.pages=49-57&amp;rft.pub=Springer&amp;rft.date=2006&amp;rft_id=%2F%2Fciteseerx.ist.psu.edu%2Fviewdoc%2Fsummary%3Fdoi%3D10.1.1.495.5815&amp;rft.issn=0302-9743&amp;rft_id=info%3Adoi%2F10.1007%2F11846802_15&amp;rft.isbn=978-3-540-39110-4&amp;rft.aulast=Sanders&amp;rft.aufirst=Peter&amp;rft.au=Tr%C3%A4ff%2C+Jesper+Larsson&amp;rfr_id=info%3Asid%2Fen.wikipedia.org%3ATwo-tree+broadcast" class="Z3988"></span><link rel="mw-deduplicated-inline-style" href="mw-data:TemplateStyles:r886058088"/></span>
+</li>
+<li id="cite_note-JohnssonHo1989-7"><span class="mw-cite-backlink">^ <a href="#cite_ref-JohnssonHo1989_7-0"><sup><i><b>a</b></i></sup></a> <a href="#cite_ref-JohnssonHo1989_7-1"><sup><i><b>b</b></i></sup></a></span> <span class="reference-text"><cite class="citation journal">Johnsson, S.L.; Ho, C.-T. (1989). "Optimum broadcasting and personalized communication in hypercubes". <i>IEEE Transactions on Computers</i>. <b>38</b> (9): 1249–1268. <a href="/wiki/Digital_object_identifier" title="Digital object identifier">doi</a>:<a rel="nofollow" class="external text" href="//doi.org/10.1109%2F12.29465">10.1109/12.29465</a>. <a href="/wiki/International_Standard_Serial_Number" title="International Standard Serial Number">ISSN</a>&#160;<a rel="nofollow" class="external text" href="//www.worldcat.org/issn/0018-9340">0018-9340</a>.</cite><span title="ctx_ver=Z39.88-2004&amp;rft_val_fmt=info%3Aofi%2Ffmt%3Akev%3Amtx%3Ajournal&amp;rft.genre=article&amp;rft.jtitle=IEEE+Transactions+on+Computers&amp;rft.atitle=Optimum+broadcasting+and+personalized+communication+in+hypercubes&amp;rft.volume=38&amp;rft.issue=9&amp;rft.pages=1249-1268&amp;rft.date=1989&amp;rft_id=info%3Adoi%2F10.1109%2F12.29465&amp;rft.issn=00189340&amp;rft.aulast=Johnsson&amp;rft.aufirst=S.L.&amp;rft.au=Ho%2C+C.-T.&amp;rfr_id=info%3Asid%2Fen.wikipedia.org%3ATwo-tree+broadcast" class="Z3988"></span><link rel="mw-deduplicated-inline-style" href="mw-data:TemplateStyles:r886058088"/></span>
+</li>
+</ol></div></div>
+<!-- 
+NewPP limit report
+Parsed by mw1300
+Cached time: 20190919160401
+Cache expiry: 2592000
+Dynamic content: false
+Complications: [vary‐revision‐sha1]
+CPU time usage: 0.304 seconds
+Real time usage: 0.399 seconds
+Preprocessor visited node count: 2245/1000000
+Preprocessor generated node count: 0/1500000
+Post‐expand include size: 26452/2097152 bytes
+Template argument size: 4078/2097152 bytes
+Highest expansion depth: 8/40
+Expensive parser function count: 3/500
+Unstrip recursion depth: 1/20
+Unstrip post‐expand size: 25588/5000000 bytes
+Number of Wikibase entities loaded: 3/400
+Lua time usage: 0.151/10.000 seconds
+Lua memory usage: 3.81 MB/50 MB
+-->
+<!--
+Transclusion expansion time report (%,ms,calls,template)
+100.00%  307.350      1 -total
+ 72.47%  222.737      1 Template:Reflist
+ 51.66%  158.784      5 Template:Cite_journal
+ 15.24%   46.825    111 Template:Math
+ 11.67%   35.854      2 Template:Cite_book
+  6.92%   21.265      5 Template:Sfrac
+  4.26%   13.093      1 Template:Further
+  2.37%    7.280      1 Template:R
+  1.35%    4.141      2 Template:Sqrt
+  1.20%    3.701      2 Template:R/ref
+-->
+
+<!-- Saved in parser cache with key enwiki:pcache:idhash:56956816-0!canonical!math=5 and timestamp 20190919160401 and revision id 914437897
+ -->
+</div><noscript><img src="//en.wikipedia.org/wiki/Special:CentralAutoLogin/start?type=1x1" alt="" title="" width="1" height="1" style="border: none; position: absolute;" /></noscript></div>
+		
+		<div class="printfooter">Retrieved from "<a dir="ltr" href="https://en.wikipedia.org/w/index.php?title=Two-tree_broadcast&amp;oldid=914437897">https://en.wikipedia.org/w/index.php?title=Two-tree_broadcast&amp;oldid=914437897</a>"</div>
+		
+		<div id="catlinks" class="catlinks" data-mw="interface"><div id="mw-normal-catlinks" class="mw-normal-catlinks"><a href="/wiki/Help:Category" title="Help:Category">Categories</a>: <ul><li><a href="/wiki/Category:Networking_algorithms" title="Category:Networking algorithms">Networking algorithms</a></li><li><a href="/wiki/Category:Distributed_algorithms" title="Category:Distributed algorithms">Distributed algorithms</a></li></ul></div></div>
+		<div class="visualClear"></div>
+		
+	</div>
+</div>
+<div id='mw-data-after-content'>
+	<div class="read-more-container"></div>
+</div>
+
+
+		<div id="mw-navigation">
+			<h2>Navigation menu</h2>
+			<div id="mw-head">
+									<div id="p-personal" role="navigation" aria-labelledby="p-personal-label">
+						<h3 id="p-personal-label">Personal tools</h3>
+						<ul>
+							<li id="pt-anonuserpage">Not logged in</li><li id="pt-anontalk"><a href="/wiki/Special:MyTalk" title="Discussion about edits from this IP address [n]" accesskey="n">Talk</a></li><li id="pt-anoncontribs"><a href="/wiki/Special:MyContributions" title="A list of edits made from this IP address [y]" accesskey="y">Contributions</a></li><li id="pt-createaccount"><a href="/w/index.php?title=Special:CreateAccount&amp;returnto=Two-tree+broadcast" title="You are encouraged to create an account and log in; however, it is not mandatory">Create account</a></li><li id="pt-login"><a href="/w/index.php?title=Special:UserLogin&amp;returnto=Two-tree+broadcast" title="You&#039;re encouraged to log in; however, it&#039;s not mandatory. [o]" accesskey="o">Log in</a></li>						</ul>
+					</div>
+									<div id="left-navigation">
+										<div id="p-namespaces" role="navigation" class="vectorTabs" aria-labelledby="p-namespaces-label">
+						<h3 id="p-namespaces-label">Namespaces</h3>
+						<ul>
+							<li id="ca-nstab-main" class="selected"><span><a href="/wiki/Two-tree_broadcast" title="View the content page [c]" accesskey="c">Article</a></span></li><li id="ca-talk"><span><a href="/wiki/Talk:Two-tree_broadcast" rel="discussion" title="Discussion about the content page [t]" accesskey="t">Talk</a></span></li>						</ul>
+					</div>
+										<div id="p-variants" role="navigation" class="vectorMenu emptyPortlet" aria-labelledby="p-variants-label">
+												<input type="checkbox" class="vectorMenuCheckbox" aria-labelledby="p-variants-label" />
+						<h3 id="p-variants-label">
+							<span>Variants</span>
+						</h3>
+						<ul class="menu">
+													</ul>
+					</div>
+									</div>
+				<div id="right-navigation">
+										<div id="p-views" role="navigation" class="vectorTabs" aria-labelledby="p-views-label">
+						<h3 id="p-views-label">Views</h3>
+						<ul>
+							<li id="ca-view" class="collapsible selected"><span><a href="/wiki/Two-tree_broadcast">Read</a></span></li><li id="ca-edit" class="collapsible"><span><a href="/w/index.php?title=Two-tree_broadcast&amp;action=edit" title="Edit this page [e]" accesskey="e">Edit</a></span></li><li id="ca-history" class="collapsible"><span><a href="/w/index.php?title=Two-tree_broadcast&amp;action=history" title="Past revisions of this page [h]" accesskey="h">View history</a></span></li>						</ul>
+					</div>
+										<div id="p-cactions" role="navigation" class="vectorMenu emptyPortlet" aria-labelledby="p-cactions-label">
+						<input type="checkbox" class="vectorMenuCheckbox" aria-labelledby="p-cactions-label" />
+						<h3 id="p-cactions-label"><span>More</span></h3>
+						<ul class="menu">
+													</ul>
+					</div>
+										<div id="p-search" role="search">
+						<h3>
+							<label for="searchInput">Search</label>
+						</h3>
+						<form action="/w/index.php" id="searchform">
+							<div id="simpleSearch">
+								<input type="search" name="search" placeholder="Search Wikipedia" title="Search Wikipedia [f]" accesskey="f" id="searchInput"/><input type="hidden" value="Special:Search" name="title"/><input type="submit" name="fulltext" value="Search" title="Search Wikipedia for this text" id="mw-searchButton" class="searchButton mw-fallbackSearchButton"/><input type="submit" name="go" value="Go" title="Go to a page with this exact name if it exists" id="searchButton" class="searchButton"/>							</div>
+						</form>
+					</div>
+									</div>
+			</div>
+			<div id="mw-panel">
+				<div id="p-logo" role="banner"><a class="mw-wiki-logo" href="/wiki/Main_Page" title="Visit the main page"></a></div>
+						<div class="portal" role="navigation" id="p-navigation" aria-labelledby="p-navigation-label">
+			<h3 id="p-navigation-label">Navigation</h3>
+			<div class="body">
+								<ul>
+					<li id="n-mainpage-description"><a href="/wiki/Main_Page" title="Visit the main page [z]" accesskey="z">Main page</a></li><li id="n-contents"><a href="/wiki/Portal:Contents" title="Guides to browsing Wikipedia">Contents</a></li><li id="n-featuredcontent"><a href="/wiki/Portal:Featured_content" title="Featured content – the best of Wikipedia">Featured content</a></li><li id="n-currentevents"><a href="/wiki/Portal:Current_events" title="Find background information on current events">Current events</a></li><li id="n-randompage"><a href="/wiki/Special:Random" title="Load a random article [x]" accesskey="x">Random article</a></li><li id="n-sitesupport"><a href="https://donate.wikimedia.org/wiki/Special:FundraiserRedirector?utm_source=donate&amp;utm_medium=sidebar&amp;utm_campaign=C13_en.wikipedia.org&amp;uselang=en" title="Support us">Donate to Wikipedia</a></li><li id="n-shoplink"><a href="//shop.wikimedia.org" title="Visit the Wikipedia store">Wikipedia store</a></li>				</ul>
+							</div>
+		</div>
+			<div class="portal" role="navigation" id="p-interaction" aria-labelledby="p-interaction-label">
+			<h3 id="p-interaction-label">Interaction</h3>
+			<div class="body">
+								<ul>
+					<li id="n-help"><a href="/wiki/Help:Contents" title="Guidance on how to use and edit Wikipedia">Help</a></li><li id="n-aboutsite"><a href="/wiki/Wikipedia:About" title="Find out about Wikipedia">About Wikipedia</a></li><li id="n-portal"><a href="/wiki/Wikipedia:Community_portal" title="About the project, what you can do, where to find things">Community portal</a></li><li id="n-recentchanges"><a href="/wiki/Special:RecentChanges" title="A list of recent changes in the wiki [r]" accesskey="r">Recent changes</a></li><li id="n-contactpage"><a href="//en.wikipedia.org/wiki/Wikipedia:Contact_us" title="How to contact Wikipedia">Contact page</a></li>				</ul>
+							</div>
+		</div>
+			<div class="portal" role="navigation" id="p-tb" aria-labelledby="p-tb-label">
+			<h3 id="p-tb-label">Tools</h3>
+			<div class="body">
+								<ul>
+					<li id="t-whatlinkshere"><a href="/wiki/Special:WhatLinksHere/Two-tree_broadcast" title="List of all English Wikipedia pages containing links to this page [j]" accesskey="j">What links here</a></li><li id="t-recentchangeslinked"><a href="/wiki/Special:RecentChangesLinked/Two-tree_broadcast" rel="nofollow" title="Recent changes in pages linked from this page [k]" accesskey="k">Related changes</a></li><li id="t-upload"><a href="/wiki/Wikipedia:File_Upload_Wizard" title="Upload files [u]" accesskey="u">Upload file</a></li><li id="t-specialpages"><a href="/wiki/Special:SpecialPages" title="A list of all special pages [q]" accesskey="q">Special pages</a></li><li id="t-permalink"><a href="/w/index.php?title=Two-tree_broadcast&amp;oldid=914437897" title="Permanent link to this revision of the page">Permanent link</a></li><li id="t-info"><a href="/w/index.php?title=Two-tree_broadcast&amp;action=info" title="More information about this page">Page information</a></li><li id="t-wikibase"><a href="https://www.wikidata.org/wiki/Special:EntityPage/Q55636350" title="Link to connected data repository item [g]" accesskey="g">Wikidata item</a></li><li id="t-cite"><a href="/w/index.php?title=Special:CiteThisPage&amp;page=Two-tree_broadcast&amp;id=914437897" title="Information on how to cite this page">Cite this page</a></li>				</ul>
+							</div>
+		</div>
+			<div class="portal" role="navigation" id="p-coll-print_export" aria-labelledby="p-coll-print_export-label">
+			<h3 id="p-coll-print_export-label">Print/export</h3>
+			<div class="body">
+								<ul>
+					<li id="coll-create_a_book"><a href="/w/index.php?title=Special:Book&amp;bookcmd=book_creator&amp;referer=Two-tree+broadcast">Create a book</a></li><li id="coll-download-as-rl"><a href="/w/index.php?title=Special:ElectronPdf&amp;page=Two-tree+broadcast&amp;action=show-download-screen">Download as PDF</a></li><li id="t-print"><a href="/w/index.php?title=Two-tree_broadcast&amp;printable=yes" title="Printable version of this page [p]" accesskey="p">Printable version</a></li>				</ul>
+							</div>
+		</div>
+			<div class="portal" role="navigation" id="p-lang" aria-labelledby="p-lang-label">
+			<h3 id="p-lang-label">Languages</h3>
+			<div class="body">
+								<ul>
+									</ul>
+				<div class="after-portlet after-portlet-lang"><span class="wb-langlinks-add wb-langlinks-link"><a href="https://www.wikidata.org/wiki/Special:EntityPage/Q55636350#sitelinks-wikipedia" title="Add interlanguage links" class="wbc-editpage">Add links</a></span></div>			</div>
+		</div>
+				</div>
+		</div>
+				<div id="footer" role="contentinfo">
+						<ul id="footer-info">
+								<li id="footer-info-lastmod"> This page was last edited on 7 September 2019, at 13:41<span class="anonymous-show">&#160;(UTC)</span>.</li>
+								<li id="footer-info-copyright">Text is available under the <a rel="license" href="//en.wikipedia.org/wiki/Wikipedia:Text_of_Creative_Commons_Attribution-ShareAlike_3.0_Unported_License">Creative Commons Attribution-ShareAlike License</a><a rel="license" href="//creativecommons.org/licenses/by-sa/3.0/" style="display:none;"></a>;
+additional terms may apply.  By using this site, you agree to the <a href="//foundation.wikimedia.org/wiki/Terms_of_Use">Terms of Use</a> and <a href="//foundation.wikimedia.org/wiki/Privacy_policy">Privacy Policy</a>. Wikipedia® is a registered trademark of the <a href="//www.wikimediafoundation.org/">Wikimedia Foundation, Inc.</a>, a non-profit organization.</li>
+							</ul>
+						<ul id="footer-places">
+								<li id="footer-places-privacy"><a href="https://foundation.wikimedia.org/wiki/Privacy_policy" class="extiw" title="wmf:Privacy policy">Privacy policy</a></li>
+								<li id="footer-places-about"><a href="/wiki/Wikipedia:About" title="Wikipedia:About">About Wikipedia</a></li>
+								<li id="footer-places-disclaimer"><a href="/wiki/Wikipedia:General_disclaimer" title="Wikipedia:General disclaimer">Disclaimers</a></li>
+								<li id="footer-places-contact"><a href="//en.wikipedia.org/wiki/Wikipedia:Contact_us">Contact Wikipedia</a></li>
+								<li id="footer-places-developers"><a href="https://www.mediawiki.org/wiki/Special:MyLanguage/How_to_contribute">Developers</a></li>
+								<li id="footer-places-cookiestatement"><a href="https://foundation.wikimedia.org/wiki/Cookie_statement">Cookie statement</a></li>
+								<li id="footer-places-mobileview"><a href="//en.m.wikipedia.org/w/index.php?title=Two-tree_broadcast&amp;mobileaction=toggle_view_mobile" class="noprint stopMobileRedirectToggle">Mobile view</a></li>
+							</ul>
+										<ul id="footer-icons" class="noprint">
+										<li id="footer-copyrightico">
+						<a href="https://wikimediafoundation.org/"><img src="/static/images/wikimedia-button.png" srcset="/static/images/wikimedia-button-1.5x.png 1.5x, /static/images/wikimedia-button-2x.png 2x" width="88" height="31" alt="Wikimedia Foundation"/></a>					</li>
+										<li id="footer-poweredbyico">
+						<a href="https://www.mediawiki.org/"><img src="/static/images/poweredby_mediawiki_88x31.png" alt="Powered by MediaWiki" srcset="/static/images/poweredby_mediawiki_132x47.png 1.5x, /static/images/poweredby_mediawiki_176x62.png 2x" width="88" height="31"/></a>					</li>
+									</ul>
+						<div style="clear: both;"></div>
+		</div>
+		
+
+<script>(RLQ=window.RLQ||[]).push(function(){mw.config.set({"wgPageParseReport":{"limitreport":{"cputime":"0.304","walltime":"0.399","ppvisitednodes":{"value":2245,"limit":1000000},"ppgeneratednodes":{"value":0,"limit":1500000},"postexpandincludesize":{"value":26452,"limit":2097152},"templateargumentsize":{"value":4078,"limit":2097152},"expansiondepth":{"value":8,"limit":40},"expensivefunctioncount":{"value":3,"limit":500},"unstrip-depth":{"value":1,"limit":20},"unstrip-size":{"value":25588,"limit":5000000},"entityaccesscount":{"value":3,"limit":400},"timingprofile":["100.00%  307.350      1 -total"," 72.47%  222.737      1 Template:Reflist"," 51.66%  158.784      5 Template:Cite_journal"," 15.24%   46.825    111 Template:Math"," 11.67%   35.854      2 Template:Cite_book","  6.92%   21.265      5 Template:Sfrac","  4.26%   13.093      1 Template:Further","  2.37%    7.280      1 Template:R","  1.35%    4.141      2 Template:Sqrt","  1.20%    3.701      2 Template:R/ref"]},"scribunto":{"limitreport-timeusage":{"value":"0.151","limit":"10.000"},"limitreport-memusage":{"value":4000157,"limit":52428800}},"cachereport":{"origin":"mw1300","timestamp":"20190919160401","ttl":2592000,"transientcontent":false}}});});</script>
+<script type="application/ld+json">{"@context":"https:\/\/schema.org","@type":"Article","name":"Two-tree broadcast","url":"https:\/\/en.wikipedia.org\/wiki\/Two-tree_broadcast","sameAs":"http:\/\/www.wikidata.org\/entity\/Q55636350","mainEntity":"http:\/\/www.wikidata.org\/entity\/Q55636350","author":{"@type":"Organization","name":"Contributors to Wikimedia projects"},"publisher":{"@type":"Organization","name":"Wikimedia Foundation, Inc.","logo":{"@type":"ImageObject","url":"https:\/\/www.wikimedia.org\/static\/images\/wmf-hor-googpub.png"}},"datePublished":"2018-03-27T16:01:37Z","dateModified":"2019-09-07T13:41:49Z"}</script>
+<script>(RLQ=window.RLQ||[]).push(function(){mw.config.set({"wgBackendResponseTime":108,"wgHostname":"mw1331"});});</script>
+</body>
+</html>
